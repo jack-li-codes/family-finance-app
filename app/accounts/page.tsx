@@ -78,7 +78,9 @@ export default function AccountsPage() {
     const { name, value } = e.target;
     setNewAccount((prev) => ({
       ...prev,
-      [name]: ["balance", "initial_balance"].includes(name) ? parseFloat(value) || 0 : value,
+      [name]: ["balance", "initial_balance"].includes(name)
+        ? parseFloat(value.replace(/^0+(?=\d)/, "")) || 0
+        : value,
     }));
   };
 
@@ -201,7 +203,6 @@ export default function AccountsPage() {
           <FixedExpenses />
         </div>
 
-
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
           <button onClick={() => { setShowForm(!showForm); resetForm(); }} style={{ backgroundColor: "green", color: "white", padding: "8px 16px", borderRadius: 4 }}>
             ➕ 添加账户
@@ -224,7 +225,17 @@ export default function AccountsPage() {
               <tr>
                 {["name", "category", "owner", "balance", "currency", "card_number", "note", "initial_balance", "initial_date"].map((key) => (
                   <td key={key} style={tdStyle}>
-                    <input name={key} type={key.includes("balance") ? "number" : key === "initial_date" ? "date" : "text"} value={(newAccount as any)[key] ?? ""} onChange={handleChange} style={{ padding: 6, width: "100%", boxSizing: "border-box" }} />
+                    <input
+                      name={key}
+                      type={key.includes("balance") ? "number" : key === "initial_date" ? "date" : "text"}
+                      value={
+                        ["balance", "initial_balance"].includes(key)
+                          ? ((newAccount as any)[key] === 0 ? "" : String((newAccount as any)[key]))
+                          : (newAccount as any)[key] ?? ""
+                      }
+                      onChange={handleChange}
+                      style={{ padding: 6, width: "100%", boxSizing: "border-box" }}
+                    />
                   </td>
                 ))}
               </tr>
