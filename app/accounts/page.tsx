@@ -21,9 +21,18 @@ type Account = {
   user_id?: string;
 };
 
+type Transaction = {
+  id: string;
+  account_id: string;
+  amount: number;
+  date: string;
+  [key: string]: any;
+};
+
 export default function AccountsPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalBalanceMap, setTotalBalanceMap] = useState<Record<string, number>>({});
   const [newAccount, setNewAccount] = useState<Omit<Account, "id">>({
     name: "",
@@ -43,36 +52,47 @@ export default function AccountsPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push("/login");
     });
-    fetchAccounts();
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    const totals: Record<string, number> = {};
-    accounts.forEach((acc) => {
-      const amount = Number(acc.balance ?? 0) + Number(acc.initial_balance ?? 0);
-      const currency = acc.currency ?? "UNKNOWN";
-      if (!totals[currency]) totals[currency] = 0;
-      totals[currency] += amount;
-    });
-    setTotalBalanceMap(totals);
-  }, [accounts]);
-
-  const fetchAccounts = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
+    const { data: accData } = await supabase
       .from("accounts")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    if (!error && data) {
-      setAccounts(data as Account[]);
-    }
+    const { data: txData } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id);
+
+    if (accData) setAccounts(accData);
+    if (txData) setTransactions(txData);
   };
+
+  const getCurrentBalance = (account: Account): number => {
+    const txAfterStart = transactions.filter(
+      (tx) =>
+        tx.account_id === account.id &&
+        (!account.initial_date || tx.date >= account.initial_date)
+    );
+    const delta = txAfterStart.reduce((sum, tx) => sum + tx.amount, 0);
+    return (account.initial_balance || 0) + delta;
+  };
+
+  useEffect(() => {
+    const totals: Record<string, number> = {};
+    accounts.forEach((acc) => {
+      const current = getCurrentBalance(acc);
+      if (!totals[acc.currency]) totals[acc.currency] = 0;
+      totals[acc.currency] += current;
+    });
+    setTotalBalanceMap(totals);
+  }, [accounts, transactions]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -90,9 +110,7 @@ export default function AccountsPage() {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       alert("未登录用户，无法添加账户");
       return;
@@ -116,7 +134,7 @@ export default function AccountsPage() {
 
     setShowForm(false);
     resetForm();
-    fetchAccounts();
+    fetchData();
   };
 
   const handleEdit = (account: Account) => {
@@ -129,7 +147,7 @@ export default function AccountsPage() {
   const handleDelete = async (id: string) => {
     if (confirm("确定要删除这个账户吗？")) {
       await supabase.from("accounts").delete().eq("id", id);
-      fetchAccounts();
+      fetchData();
     }
   };
 
@@ -138,11 +156,11 @@ export default function AccountsPage() {
       账户名称: acc.name,
       分类: acc.category,
       所有人: acc.owner,
-      余额: acc.balance,
       币种: acc.currency,
+      初始余额: acc.initial_balance,
+      当前余额: getCurrentBalance(acc).toFixed(2),
       卡号: acc.card_number,
       备注: acc.note,
-      初始余额: acc.initial_balance,
       起始日期: acc.initial_date ?? "",
     }));
 
@@ -216,20 +234,20 @@ export default function AccountsPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20, border: "1px solid #ccc" }}>
             <thead>
               <tr>
-                {["账户名称", "分类", "所有人", "余额", "币种", "卡号", "备注", "初始余额", "起始日期"].map((h) => (
+                {["账户名称", "分类", "所有人", "币种", "卡号", "备注", "初始余额", "起始日期"].map((h) => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               <tr>
-                {["name", "category", "owner", "balance", "currency", "card_number", "note", "initial_balance", "initial_date"].map((key) => (
+                {["name", "category", "owner", "currency", "card_number", "note", "initial_balance", "initial_date"].map((key) => (
                   <td key={key} style={tdStyle}>
                     <input
                       name={key}
-                      type={key.includes("balance") ? "number" : key === "initial_date" ? "date" : "text"}
+                      type={["initial_balance"].includes(key) ? "number" : key === "initial_date" ? "date" : "text"}
                       value={
-                        ["balance", "initial_balance"].includes(key)
+                        ["initial_balance"].includes(key)
                           ? ((newAccount as any)[key] === 0 ? "" : String((newAccount as any)[key]))
                           : (newAccount as any)[key] ?? ""
                       }
@@ -255,7 +273,7 @@ export default function AccountsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
-              {["账户名称", "分类", "所有人", "余额", "币种", "卡号", "备注", "初始余额", "起始日期", "操作"].map((h) => (
+              {["账户名称", "分类", "所有人", "币种", "卡号", "备注", "初始余额", "当前余额", "起始日期", "操作"].map((h) => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
             </tr>
@@ -266,13 +284,13 @@ export default function AccountsPage() {
                 <td style={tdStyle}>{acc.name}</td>
                 <td style={tdStyle}>{acc.category}</td>
                 <td style={tdStyle}>{acc.owner}</td>
-                <td style={tdStyle}>{acc.balance}</td>
                 <td style={tdStyle}>{acc.currency}</td>
                 <td style={tdStyle}>{acc.card_number}</td>
                 <td style={tdStyle}>{acc.note}</td>
                 <td style={tdStyle}>{acc.initial_balance}</td>
+                <td style={tdStyle}><b>{getCurrentBalance(acc).toFixed(2)}</b></td>
                 <td style={tdStyle}>{acc.initial_date ?? ""}</td>
-                <td style={{ ...tdStyle }}>
+                <td style={tdStyle}>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button onClick={() => handleEdit(acc)} style={{ backgroundColor: "#ffc107", padding: "6px 10px", borderRadius: 4 }}>编辑</button>
                     <button onClick={() => handleDelete(acc.id)} style={{ backgroundColor: "red", color: "white", padding: "6px 10px", borderRadius: 4 }}>删除</button>
