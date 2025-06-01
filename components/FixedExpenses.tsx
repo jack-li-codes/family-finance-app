@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function FixedExpenses() {
-  <p style={{ color: "green", fontWeight: "bold" }}>🚀 v2 - 新版本已上线～～~</p>
+  <p style={{ color: "green", fontWeight: "bold" }}>🚀 v2 - 新版本已上线～~</p>
   return (
     
     <div style={{ backgroundColor: "#fffbe6", padding: "16px 24px", border: "1px solid #f0e6c8", borderRadius: 6, fontSize: "14px", flex: 1 }}>
