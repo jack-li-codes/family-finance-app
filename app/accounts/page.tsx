@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import * as XLSX from "xlsx";
 
+
 type Account = {
   id: string;
   name: string;
