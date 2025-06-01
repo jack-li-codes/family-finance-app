@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import * as XLSX from "xlsx";
-
+import FixedExpenses from "@/components/FixedExpenses";
 
 type Account = {
   id: string;
@@ -198,21 +198,9 @@ export default function AccountsPage() {
             ))}
           </div>
 
-          <div style={{ backgroundColor: "#fffbe6", padding: "16px 24px", border: "1px solid #f0e6c8", borderRadius: 6, fontSize: "14px", flex: 1 }}>
-            <strong style={{ display: "block", marginBottom: "8px" }}>📅 当前月份固定花销:</strong>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px" }}>
-              <div>房贷: 4482.28（每月28号）</div>
-              <div>汽车保险: 497.13（每月23号）</div>
-              <div>房屋保险: 208.02（每月23号）</div>
-              <div>车 lease: 817.22（每月10号）</div>
-              <div>地税: 1560（4月1次，6月25号）</div>
-              <div>水电: 约130（每月20号）</div>
-              <div>煤气: 约130（每月20号）</div>
-              <div>宽带: 74（每月5号，LJS信用卡）</div>
-              <div>电话费: 169.47（每月25号，JH信用卡）</div>
-            </div>
-          </div>
+          <FixedExpenses />
         </div>
+
 
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
           <button onClick={() => { setShowForm(!showForm); resetForm(); }} style={{ backgroundColor: "green", color: "white", padding: "8px 16px", borderRadius: 4 }}>
