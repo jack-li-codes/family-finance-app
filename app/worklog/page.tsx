@@ -94,10 +94,16 @@ export default function WorklogPage() {
     }
   
     const payload = {
-      ...formData,
-      user_id: user.id,
+      date: formData.date,
+      start_time: formData.start_time,
+      end_time: formData.end_time,
+      hours: formData.hours,
+      location: formData.location,
+      note: formData.note,
       project_id: formData.project_id || null,
+      user_id: user.id,
     };
+    
   
     const { error } = editingId
       ? await supabase.from("worklogs").update(payload).eq("id", editingId)
