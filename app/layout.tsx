@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const navItems = [
     { label: "💳 账户管理", href: "/accounts" },
     { label: "📁 收入/支出", href: "/transactions" },
-    { label: "📊 收支汇总C", href: "/summary" },
+    { label: "📊 收支汇总CA", href: "/summary" },
     { label: "🛠 工程记录", href: "/worklog" },
     { label: "📊 账户余额", href: "/balance" },
     { label: "📚 项目管理", href: "/projects" }, // ✅ 新增菜单项
