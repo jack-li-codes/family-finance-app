@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +6,16 @@ import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
 import * as XLSX from "xlsx";
 import FixedExpenses from "@/components/FixedExpenses";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
+
+// 账户类别选项（值保留中文以兼容历史数据；显示用 t()）
+const ACCOUNT_CATEGORY_OPTIONS = [
+  "活期账户",
+  "信用账户",
+  "现金账户",
+  "社保账户",
+] as const;
 
 type Account = {
   id: string;
@@ -30,7 +39,15 @@ type Transaction = {
   [key: string]: any;
 };
 
+// 本地时区 YYYY-MM-DD（避免跨日）
+const toLocalISODate = (d: Date) => {
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 10);
+};
+
 export default function AccountsPage() {
+  const { lang } = useLang();
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -54,6 +71,7 @@ export default function AccountsPage() {
       if (!session) router.push("/login");
     });
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -107,13 +125,13 @@ export default function AccountsPage() {
 
   const handleSave = async () => {
     if (!newAccount.name || !newAccount.owner) {
-      alert("账户名称和所有人不能为空");
+      alert(t("账户名称和所有人不能为空", lang));
       return;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      alert("未登录用户，无法添加账户");
+      alert(t("未登录用户，无法添加账户", lang));
       return;
     }
 
@@ -128,8 +146,8 @@ export default function AccountsPage() {
       : await supabase.from("accounts").insert(accountData);
 
     if (error) {
-      console.error("保存失败：", error.message);
-      alert("保存失败：" + error.message);
+      console.error(t("保存失败：", lang), error.message);
+      alert(t("保存失败：", lang) + error.message);
       return;
     }
 
@@ -146,7 +164,7 @@ export default function AccountsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("确定要删除这个账户吗？")) {
+    if (confirm(t("确定要删除这个账户吗？", lang))) {
       await supabase.from("accounts").delete().eq("id", id);
       fetchData();
     }
@@ -154,15 +172,15 @@ export default function AccountsPage() {
 
   const exportToExcel = () => {
     const formatted = accounts.map((acc) => ({
-      账户名称: acc.name,
-      分类: acc.category,
-      所有人: acc.owner,
-      币种: acc.currency,
-      初始余额: acc.initial_balance,
-      当前余额: getCurrentBalance(acc).toFixed(2),
-      卡号: acc.card_number,
-      备注: acc.note,
-      起始日期: acc.initial_date ?? "",
+      [t("账户名称", lang)]: acc.name,
+      [t("分类", lang)]: t(acc.category, lang),
+      [t("所有人", lang)]: acc.owner,
+      [t("币种", lang)]: acc.currency,
+      [t("初始余额", lang)]: acc.initial_balance,
+      [t("当前余额", lang)]: getCurrentBalance(acc).toFixed(2),
+      [t("卡号", lang)]: acc.card_number,
+      [t("备注", lang)]: acc.note,
+      [t("起始日期", lang)]: acc.initial_date ?? "",
     }));
 
     const ws = XLSX.utils.json_to_sheet(formatted);
@@ -181,7 +199,8 @@ export default function AccountsPage() {
       card_number: "",
       note: "",
       initial_balance: 0,
-      initial_date: null,
+      // 👉 默认今天；如果想默认空，把下一行改成 null
+      initial_date: toLocalISODate(new Date()),
     });
     setEditingId(null);
   };
@@ -204,16 +223,16 @@ export default function AccountsPage() {
   return (
     <AuthGuard>
       <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-        <h1>🏠 家庭账户管理</h1>
+        <h1>🏠 {t("家庭账户管理", lang)}</h1>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, marginBottom: 20 }}>
           <div style={{ fontWeight: "bold", fontSize: "18px" }}>
-            家庭账户总余额：
+            {t("家庭账户总余额", lang)}：
             {Object.entries(totalBalanceMap).map(([currency, amount]) => (
               <div key={currency}>
                 {currency}：
                 <span style={{ color: amount >= 0 ? "green" : "red" }}>
-                  {amount.toFixed(2)} {amount >= 0 ? "（正）" : "（负）"}
+                  {amount.toFixed(2)} {amount >= 0 ? t("（正）", lang) : t("（负）", lang)}
                 </span>
               </div>
             ))}
@@ -223,11 +242,14 @@ export default function AccountsPage() {
         </div>
 
         <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-          <button onClick={() => { setShowForm(!showForm); resetForm(); }} style={{ backgroundColor: "green", color: "white", padding: "8px 16px", borderRadius: 4 }}>
-            ➕ 添加账户
+          <button
+            onClick={() => { setShowForm(!showForm); resetForm(); }}
+            style={{ backgroundColor: "green", color: "white", padding: "8px 16px", borderRadius: 4 }}
+          >
+            ➕ {t("添加账户", lang)}
           </button>
           <button onClick={exportToExcel} style={{ backgroundColor: "#007bff", color: "white", padding: "8px 16px", borderRadius: 4 }}>
-            📤 导出为 Excel
+            📤 {t("导出为 Excel", lang)}
           </button>
         </div>
 
@@ -236,7 +258,7 @@ export default function AccountsPage() {
             <thead>
               <tr>
                 {["账户名称", "分类", "所有人", "币种", "卡号", "备注", "初始余额", "起始日期"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h} style={thStyle}>{t(h, lang)}</th>
                 ))}
               </tr>
             </thead>
@@ -244,17 +266,42 @@ export default function AccountsPage() {
               <tr>
                 {["name", "category", "owner", "currency", "card_number", "note", "initial_balance", "initial_date"].map((key) => (
                   <td key={key} style={tdStyle}>
-                    <input
-                      name={key}
-                      type={["initial_balance"].includes(key) ? "number" : key === "initial_date" ? "date" : "text"}
-                      value={
-                        ["initial_balance"].includes(key)
-                          ? ((newAccount as any)[key] === 0 ? "" : String((newAccount as any)[key]))
-                          : (newAccount as any)[key] ?? ""
-                      }
-                      onChange={handleChange}
-                      style={{ padding: 6, width: "100%", boxSizing: "border-box" }}
-                    />
+                    {key === "category" ? (
+                      <select
+                        name="category"
+                        value={newAccount.category}
+                        onChange={handleChange}
+                        style={{ padding: 6, width: "100%" }}
+                      >
+                        <option value="">{t("选择分类", lang)}</option>
+                        {ACCOUNT_CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {t(opt, lang)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : key === "initial_date" ? (
+                      // 👉 统一使用原生日期选择器（点击即出日历）
+                      <input
+                        name="initial_date"
+                        type="date"
+                        value={newAccount.initial_date ?? ""}
+                        onChange={handleChange}
+                        style={{ padding: 6, width: "100%", boxSizing: "border-box" }}
+                      />
+                    ) : (
+                      <input
+                        name={key}
+                        type={["initial_balance"].includes(key) ? "number" : "text"}
+                        value={
+                          ["initial_balance"].includes(key)
+                            ? ((newAccount as any)[key] === 0 ? "" : String((newAccount as any)[key]))
+                            : (newAccount as any)[key] ?? ""
+                        }
+                        onChange={handleChange}
+                        style={{ padding: 6, width: "100%", boxSizing: "border-box" }}
+                      />
+                    )}
                   </td>
                 ))}
               </tr>
@@ -263,7 +310,7 @@ export default function AccountsPage() {
               <tr>
                 <td colSpan={10} style={{ textAlign: "left", padding: 16 }}>
                   <button onClick={handleSave} style={{ backgroundColor: "#0d6efd", color: "white", padding: "8px 16px", borderRadius: 4 }}>
-                    保存
+                    {t("保存", lang)}
                   </button>
                 </td>
               </tr>
@@ -274,8 +321,19 @@ export default function AccountsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
-              {["账户名称", "分类", "所有人", "币种", "卡号", "备注", "初始余额", "当前余额", "起始日期", "操作"].map((h) => (
-                <th key={h} style={thStyle}>{h}</th>
+              {[
+                "账户名称",
+                "分类",
+                "所有人",
+                "币种",
+                "卡号",
+                "备注",
+                "初始余额",
+                "当前余额",
+                "起始日期",
+                "操作"
+              ].map((h) => (
+                <th key={h} style={thStyle}>{t(h, lang)}</th>
               ))}
             </tr>
           </thead>
@@ -283,7 +341,7 @@ export default function AccountsPage() {
             {accounts.map((acc) => (
               <tr key={acc.id}>
                 <td style={tdStyle}>{acc.name}</td>
-                <td style={tdStyle}>{acc.category}</td>
+                <td style={tdStyle}>{t(acc.category, lang)}</td>
                 <td style={tdStyle}>{acc.owner}</td>
                 <td style={tdStyle}>{acc.currency}</td>
                 <td style={tdStyle}>{acc.card_number}</td>
@@ -293,8 +351,12 @@ export default function AccountsPage() {
                 <td style={tdStyle}>{acc.initial_date ?? ""}</td>
                 <td style={tdStyle}>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => handleEdit(acc)} style={{ backgroundColor: "#ffc107", padding: "6px 10px", borderRadius: 4 }}>编辑</button>
-                    <button onClick={() => handleDelete(acc.id)} style={{ backgroundColor: "red", color: "white", padding: "6px 10px", borderRadius: 4 }}>删除</button>
+                    <button onClick={() => handleEdit(acc)} style={{ backgroundColor: "#ffc107", padding: "6px 10px", borderRadius: 4 }}>
+                      {t("编辑", lang)}
+                    </button>
+                    <button onClick={() => handleDelete(acc.id)} style={{ backgroundColor: "red", color: "white", padding: "6px 10px", borderRadius: 4 }}>
+                      {t("删除", lang)}
+                    </button>
                   </div>
                 </td>
               </tr>

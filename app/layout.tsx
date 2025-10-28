@@ -4,39 +4,95 @@
 import "./globals.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LangProvider, useLang } from "./i18n-context";
+import { t } from "./i18n";
+import { useEffect } from "react";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/** 同步 <html lang>，确保浏览器控件（如日期选择器）语言正确 */
+function LangSetter() {
+  const { lang } = useLang();
+  useEffect(() => {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  }, [lang]);
+  return null;
+}
+
+/** 顶部导航 */
+function Nav() {
   const pathname = usePathname();
+  const { lang, setLang } = useLang();
 
   const navItems = [
-    { label: "💳 账户管理", href: "/accounts" },
-    { label: "📁 收入/支出", href: "/transactions" },
-    { label: "📊 收支汇总", href: "/summary" },
-    { label: "📊 账户总揽", href: "/account-overview" },
-    { label: "🛠 工程记录", href: "/worklog" },
-    { label: "📊 账户余额", href: "/balance" },
-    { label: "📚 项目管理", href: "/projects" }, // ✅ 新增菜单项
+    { icon: "💳", key: "账户管理", href: "/accounts" },
+    { icon: "📁", key: "收入/支出", href: "/transactions" },
+    { icon: "📊", key: "收支汇总", href: "/summary" },
+    { icon: "📊", key: "账户总揽", href: "/account-overview" },
+    { icon: "🛠", key: "工程记录", href: "/worklog" },
+    { icon: "📊", key: "账户余额", href: "/balance" },
+    { icon: "📚", key: "项目管理", href: "/projects" },
   ];
 
   return (
-    <html lang="zh">
+    <nav
+      style={{
+        display: "flex",
+        gap: 20,
+        padding: "12px 24px",
+        backgroundColor: "#333",
+        alignItems: "center",
+      }}
+    >
+      {navItems.map((item) => {
+        const active = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            style={{
+              color: active ? "#fff" : "#ddd",
+              textDecoration: active ? "underline" : "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span aria-hidden>{item.icon}</span>
+            <span>{t(item.key, lang)}</span>
+          </Link>
+        );
+      })}
+
+      <div style={{ marginLeft: "auto" }}>
+        <button
+          onClick={() => setLang(lang === "zh" ? "en" : "zh")}
+          style={{
+            color: "#333",
+            background: "#fff",
+            borderRadius: 8,
+            padding: "6px 10px",
+            border: "none",
+            cursor: "pointer",
+          }}
+          title={lang === "zh" ? "Switch to English" : "切换为中文"}
+        >
+          {lang === "zh" ? "EN" : "中"}
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+/** 页面主结构 */
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
       <body style={{ margin: 0, fontFamily: "sans-serif", backgroundColor: "#f8f9fa" }}>
-        <nav style={{ display: "flex", gap: "20px", padding: "12px 24px", backgroundColor: "#333" }}>
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                color: pathname === item.href ? "#00d8ff" : "#fff",
-                textDecoration: "none",
-                fontWeight: pathname === item.href ? "bold" : "normal",
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <main style={{ padding: "24px" }}>{children}</main>
+        <LangProvider>
+          <LangSetter />
+          <Nav />
+          <main style={{ padding: 24 }}>{children}</main>
+        </LangProvider>
       </body>
     </html>
   );

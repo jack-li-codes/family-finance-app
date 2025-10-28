@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Transaction } from "../types";
 import * as XLSX from "xlsx";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
 
 const categoryOptions: Record<string, string[]> = {
   "食物": ["买菜", "餐厅/外卖", "工作餐（JH）", "工作餐（LJS）", "饮品/甜品", "其他"],
@@ -20,7 +22,16 @@ const categoryOptions: Record<string, string[]> = {
   "其他": ["其他"]
 };
 
+// 生成本地时区的 YYYY-MM-DD（避免时区串日）
+const toLocalISODate = (d: Date) => {
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 10);
+};
+
 export default function TransactionsPage() {
+  const { lang } = useLang();
+
   const [userId, setUserId] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
@@ -47,43 +58,55 @@ export default function TransactionsPage() {
         fetchAccounts();
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTransactions = async (uid: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("transactions")
       .select("*")
       .eq("user_id", uid)
       .order("date", { ascending: false });
+    if (error) {
+      alert(`${t("❌ 操作失败：", lang)}${error.message}`);
+      return;
+    }
     if (data) setTransactions(data);
   };
 
   const fetchAccounts = async () => {
-    const { data } = await supabase.from("accounts").select("id, name");
+    const { data, error } = await supabase.from("accounts").select("id, name");
+    if (error) {
+      alert(`${t("❌ 操作失败：", lang)}${error.message}`);
+      return;
+    }
     if (data) setAccounts(data);
   };
 
   const exportToExcel = () => {
-    const formatted = transactions.map((t) => {
-      const account = accounts.find((a) => a.id === t.account_id);
+    const formatted = transactions.map((t0) => {
+      const account = accounts.find((a) => a.id === t0.account_id);
       return {
-        日期: t.date,
-        类型: t.type,
-        分类: t.category,
-        二级分类: t.subcategory,
-        金额: t.amount,
-        账户: account?.name || t.account_id,
-        币种: t.currency,
-        备注: t.note,
+        [t("日期", lang)]: t0.date,
+        [t("类型", lang)]: t0.type,
+        [t("分类", lang)]: t(t0.category || "", lang),
+        [t("二级分类", lang)]: t(t0.subcategory || "", lang),
+        [t("金额", lang)]: t0.amount,
+        [t("账户", lang)]: account?.name || t0.account_id,
+        [t("币种", lang)]: t0.currency,
+        [t("备注", lang)]: t0.note,
       };
     });
-  
+
     const ws = XLSX.utils.json_to_sheet(formatted);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-    XLSX.writeFile(wb, "transactions.xlsx");
+    XLSX.utils.book_append_sheet(
+      wb,
+      ws,
+      lang === "zh" ? "收入支出" : "Transactions"
+    );
+    XLSX.writeFile(wb, (lang === "zh" ? "收入支出" : "Transactions") + ".xlsx");
   };
-  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -106,21 +129,21 @@ export default function TransactionsPage() {
       setEditingId(null);
       fetchTransactions(userId);
     } else {
-      alert("❌ 操作失败：" + error.message);
+      alert(`${t("❌ 操作失败：", lang)}${error.message}`);
     }
   };
 
-  const handleEdit = (t: Transaction) => {
-    setFormData({ ...t });
-    setEditingId(t.id);
+  const handleEdit = (t0: Transaction) => {
+    setFormData({ ...t0 });
+    setEditingId(t0.id);
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除这条记录吗？")) return;
+    if (!confirm(t("确定要删除这条记录吗？", lang))) return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (!error) fetchTransactions(userId);
-    else alert("❌ 删除失败：" + error.message);
+    else alert(`${t("❌ 删除失败：", lang)}${error.message}`);
   };
 
   const cellStyle = {
@@ -135,59 +158,132 @@ export default function TransactionsPage() {
     fontWeight: "bold",
   };
 
+  const tableHeaders = [
+    t("日期", lang),
+    t("类型", lang),
+    t("分类", lang),
+    t("二级分类", lang),
+    t("金额", lang),
+    t("账户", lang),
+    t("币种", lang),
+    t("备注", lang),
+    t("操作", lang),
+  ];
+
   return (
     <div style={{ padding: 20 }}>
-      <h2>📁 收入 / 支出记录</h2>
-      <div style={{ marginBottom: 12 }}>
+      <h2>📁 {t("收入/支出", lang)}</h2>
+
+      <div style={{ marginBottom: 12, display: "flex", gap: 8 }}>
         <button
-          onClick={() => { setShowForm(true); setFormData((f) => ({ ...f, amount: undefined as unknown as number })); setEditingId(null); }}
+          onClick={() => {
+            setShowForm(true);
+            setEditingId(null);
+            setFormData((f) => ({
+              ...f,
+              // 新增时，自动把日期设为“今天”（如果还没值）
+              date: f.date || toLocalISODate(new Date()),
+              amount: undefined as unknown as number
+            }));
+          }}
           style={{ backgroundColor: "green", color: "white", padding: "6px 12px", border: "none", marginRight: 10 }}
-        >＋ 添加记录</button>
+        >
+          ＋ {t("新增", lang)}
+        </button>
+
         <button
           onClick={exportToExcel}
           style={{ backgroundColor: "#007bff", color: "white", padding: "6px 12px", border: "none" }}
-        >导出为 Excel</button>
+        >
+          {t("导出为Excel", lang)}
+        </button>
       </div>
 
       {showForm && (
         <div style={{ padding: 12, border: "1px solid #ccc", marginBottom: 16, background: "#f9f9f9" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-            <label>日期 <input type="date" name="date" value={formData.date} onChange={handleInputChange} /></label>
-            <label>类型
+            <label>
+              {t("日期", lang)}{" "}
+              {/* 统一使用原生 date，点击弹日历；返回值就是 YYYY-MM-DD */}
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleInputChange}
+              />
+            </label>
+
+            <label>
+              {t("类型", lang)}
               <select name="type" value={formData.type} onChange={handleInputChange}>
-                <option value="支出">支出</option>
-                <option value="收入">收入</option>
+                <option value="支出">{t("支出", lang)}</option>
+                <option value="收入">{t("收入", lang)}</option>
               </select>
             </label>
-            <label>分类
+
+            <label>
+              {t("分类", lang)}
               <select name="category" value={formData.category} onChange={handleInputChange}>
-                <option value="">选择分类</option>
+                <option value="">{t("选择分类", lang)}</option>
                 {Object.keys(categoryOptions).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {t(cat, lang)}
+                  </option>
                 ))}
               </select>
             </label>
-            <label>二级分类
-              <select name="subcategory" value={formData.subcategory} onChange={handleInputChange}>
-                <option value="">选择二级分类</option>
-                {(categoryOptions[formData.category] || []).map((sub) => (
-                  <option key={sub} value={sub}>{sub}</option>
+
+            <label>
+              {t("二级分类", lang)}
+              <select name="subcategory" value={formData.subcategory} onChange={handleInputChange} disabled={!formData.category}>
+                <option value="">{t("选择二级分类", lang)}</option>
+                {(categoryOptions[formData.category || ""] || []).map((sub) => (
+                  <option key={sub} value={sub}>
+                    {t(sub, lang)}
+                  </option>
                 ))}
               </select>
             </label>
-            <label>金额 <input name="amount" type="number" value={formData.amount ?? ""} onChange={handleInputChange} /></label>
-            <label>账户
+
+            <label>
+              {t("金额", lang)}{" "}
+              <input name="amount" type="number" value={formData.amount ?? ""} onChange={handleInputChange} />
+            </label>
+
+            <label>
+              {t("账户", lang)}
               <select name="account_id" value={formData.account_id} onChange={handleInputChange}>
-                <option value="">选择账户</option>
+                <option value="">{t("选择账户", lang)}</option>
                 {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name}
+                  </option>
                 ))}
               </select>
             </label>
-            <label>币种 <input name="currency" value={formData.currency} onChange={handleInputChange} /></label>
-            <label>备注 <input name="note" value={formData.note} onChange={handleInputChange} /></label>
-            <button onClick={handleSave} style={{ backgroundColor: "#007bff", color: "white", padding: "6px 12px" }}>保存</button>
-            <button onClick={() => setShowForm(false)} style={{ padding: "6px 12px" }}>取消</button>
+
+            <label>
+              {t("币种", lang)}{" "}
+              <input name="currency" value={formData.currency} onChange={handleInputChange} />
+            </label>
+
+            <label>
+              {t("备注", lang)}{" "}
+              <input name="note" value={formData.note} onChange={handleInputChange} />
+            </label>
+
+            <button
+              onClick={handleSave}
+              style={{ backgroundColor: "#007bff", color: "white", padding: "6px 12px", border: "none" }}
+            >
+              {t("保存", lang)}
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              style={{ padding: "6px 12px", border: "1px solid #ccc", background: "#fff" }}
+            >
+              {t("取消", lang)}
+            </button>
           </div>
         </div>
       )}
@@ -195,31 +291,48 @@ export default function TransactionsPage() {
       <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
         <thead>
           <tr>
-            {"日期 类型 分类 二级分类 金额 账户 币种 备注 操作".split(" ").map((h) => (
+            {tableHeaders.map((h) => (
               <th key={h} style={thStyle}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {transactions.map((t) => {
-            const account = accounts.find((a) => a.id === t.account_id);
+          {transactions.map((t0) => {
+            const account = accounts.find((a) => a.id === t0.account_id);
             return (
-              <tr key={t.id}>
-                <td style={cellStyle}>{t.date}</td>
-                <td style={cellStyle}>{t.type}</td>
-                <td style={cellStyle}>{t.category}</td>
-                <td style={cellStyle}>{t.subcategory}</td>
-                <td style={{ ...cellStyle, textAlign: "right" }}>{t.amount}</td>
-                <td style={cellStyle}>{account?.name || t.account_id}</td>
-                <td style={cellStyle}>{t.currency}</td>
-                <td style={cellStyle}>{t.note}</td>
+              <tr key={t0.id}>
+                <td style={cellStyle}>{t0.date}</td>
+                <td style={cellStyle}>{t0.type}</td>
+                <td style={cellStyle}>{t(t0.category || "", lang)}</td>
+                <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
+                <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
+                <td style={cellStyle}>{account?.name || t0.account_id}</td>
+                <td style={cellStyle}>{t0.currency}</td>
+                <td style={cellStyle}>{t0.note}</td>
                 <td style={cellStyle}>
-                  <button onClick={() => handleEdit(t)} style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4 }}>编辑</button>
-                  <button onClick={() => handleDelete(t.id)} style={{ backgroundColor: "red", color: "white", border: "none" }}>删除</button>
+                  <button
+                    onClick={() => handleEdit(t0)}
+                    style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
+                  >
+                    {t("编辑", lang)}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t0.id)}
+                    style={{ backgroundColor: "red", color: "white", border: "none", padding: "4px 8px" }}
+                  >
+                    {t("删除", lang)}
+                  </button>
                 </td>
               </tr>
             );
           })}
+          {transactions.length === 0 && (
+            <tr>
+              <td style={{ ...cellStyle, textAlign: "center" }} colSpan={9}>
+                {t("暂无数据", lang)}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

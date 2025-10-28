@@ -1,14 +1,16 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
 
 /** ========= 类型 ========= */
-type TypeKey = "收入" | "支出";
+type TypeKeyCN = "收入" | "支出";
 
 type Tx = {
   id: string;
   date: string;                 // YYYY-MM-DD
-  type: "收入" | "支出" | "转账";
+  type: "收入" | "支出" | "转账" | "income" | "expense" | "transfer";
   category: string;
   subcategory?: string;
   amount: number;
@@ -21,7 +23,7 @@ type Grouped = Record<
   string, // YYYY-MM
   Partial<
     Record<
-      TypeKey,
+      TypeKeyCN,
       {
         total: number;                  // 仅统计 CAD 且排除“转账”分类
         categories: Record<string, Tx[]>;
@@ -36,6 +38,17 @@ const fmt = (n: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+/** --- 兼容中英的类型与分类判断 --- */
+const isIncome = (s: string) => s === "收入" || s.toLowerCase() === "income";
+const isExpense = (s: string) => s === "支出" || s.toLowerCase() === "expense";
+const isTransfer = (s: string) => s === "转账" || s.toLowerCase() === "transfer";
+const isProjectCat = (s: string) =>
+  s === "工程" || s.toLowerCase() === "project" || s === "Project";
+
+/** 某些分类不参与占比与 total（工程、转账） */
+const isExcludedForPercentOrTotal = (cat: string) =>
+  isTransfer(cat) || isProjectCat(cat);
 
 /** 通用折叠组件（按钮控制，移动端友好） */
 function ToggleSection({
@@ -77,6 +90,7 @@ function ToggleSection({
 
 /** ========= 页面 ========= */
 export default function SummaryPage() {
+  const { lang } = useLang();
   const [groupedData, setGroupedData] = useState<Grouped>({});
 
   useEffect(() => {
@@ -102,7 +116,9 @@ export default function SummaryPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">每月收支分类汇总（仅 CAD）</h1>
+      <h1 className="text-xl font-bold mb-4">
+        {t("每月收支分类汇总（仅 CAD）", lang)}
+      </h1>
 
       {Object.entries(groupedData).map(([month, data]) => (
         <ToggleSection
@@ -111,8 +127,8 @@ export default function SummaryPage() {
           defaultOpen={month === latestMonth}
           className="border-b"
         >
-          {(["收入", "支出"] as const).map((type) => {
-            const typeData = data[type];
+          {(["收入", "支出"] as const).map((typeCN) => {
+            const typeData = data[typeCN];
             if (!typeData) return null;
 
             const categoryData = typeData.categories;
@@ -120,7 +136,7 @@ export default function SummaryPage() {
             // 用于占比：仅 CAD，且排除 “转账/工程”
             const percentBase = Object.entries(categoryData).reduce(
               (sum, [cat, list]) => {
-                if (["转账", "工程"].includes(cat)) return sum;
+                if (isExcludedForPercentOrTotal(cat)) return sum;
                 const s = (list as Tx[])
                   .filter((t) => t.currency === "CAD")
                   .reduce((acc, t) => acc + Number(t.amount), 0);
@@ -131,10 +147,10 @@ export default function SummaryPage() {
 
             return (
               <ToggleSection
-                key={type}
+                key={typeCN}
                 title={
                   <span className="text-md font-semibold">
-                    {type}：${fmt(typeData.total ?? 0)}
+                    {t(typeCN, lang)}：${fmt(typeData.total ?? 0)}
                   </span>
                 }
                 className="ml-2"
@@ -147,7 +163,7 @@ export default function SummaryPage() {
                     (s, t) => s + Number(t.amount),
                     0
                   );
-                  const showPercent = !["转账", "工程"].includes(cat);
+                  const showPercent = !isExcludedForPercentOrTotal(cat);
                   const percent =
                     showPercent && percentBase !== 0
                       ? ((catSum / percentBase) * 100).toFixed(2)
@@ -158,7 +174,7 @@ export default function SummaryPage() {
                       key={cat}
                       title={
                         <span className="text-sm font-medium text-gray-800">
-                          {cat}
+                          {t(cat, lang)}
                         </span>
                       }
                       right={
@@ -166,7 +182,7 @@ export default function SummaryPage() {
                           ${fmt(catSum)}
                           {percent && (
                             <span className="text-xs text-gray-500 ml-2">
-                              （占 {percent}%）
+                              {t("（占 {n}%）", lang).replace("{n}", percent)}
                             </span>
                           )}
                         </>
@@ -181,8 +197,9 @@ export default function SummaryPage() {
                               ? `$${fmt(Number(item.amount))}`
                               : `￥${fmt(Number(item.amount))}`}{" "}
                             ({item.currency})
-                            {item.note ? ` — ${item.note}` : ""}（账户：
-                            {item.account?.name || "未知账户"}）
+                            {item.note ? ` — ${item.note}` : ""}（
+                            {t("账户", lang)}：
+                            {item.account?.name || t("未知账户", lang)}）
                           </li>
                         ))}
                       </ul>
@@ -204,23 +221,23 @@ function groupByMonthAndCategory(transactions: Tx[]): Grouped {
 
   for (const tx of transactions) {
     const month = tx.date.slice(0, 7);
-    const t = tx.type as string;
+    const ttype = (tx.type || "").toString();
 
     // 仅对【收入/支出】做分类汇总；“转账”不进入统计（但可在其它页面展示）
-    if (t !== "收入" && t !== "支出") continue;
+    if (!isIncome(ttype) && !isExpense(ttype)) continue;
 
-    const type = t as TypeKey;
+    const typeCN: TypeKeyCN = isIncome(ttype) ? "收入" : "支出";
     const category = tx.category || "未分类";
 
     // —— 安全创建层级
     const monthObj = (result[month] ??= {});
-    const typeObj = (monthObj[type] ??= { total: 0, categories: {} });
+    const typeObj = (monthObj[typeCN] ??= { total: 0, categories: {} });
 
     // —— 分类列表：任何币种都显示
     (typeObj.categories[category] ??= []).push(tx);
 
-    // —— 统计 total：仅 CAD 且跳过“转账”
-    if (category === "转账" || tx.currency !== "CAD") continue;
+    // —— 统计 total：仅 CAD 且跳过“转账/工程”
+    if (tx.currency !== "CAD" || isExcludedForPercentOrTotal(category)) continue;
     typeObj.total += Number(tx.amount);
   }
 

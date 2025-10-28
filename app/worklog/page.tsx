@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 import AuthGuard from "@/components/AuthGuard";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
 
 interface WorkLog {
   id?: string;
@@ -19,6 +21,7 @@ interface WorkLog {
 }
 
 export default function WorklogPage() {
+  const { lang } = useLang();
   const [worklogs, setWorklogs] = useState<WorkLog[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState<WorkLog>({
@@ -56,28 +59,22 @@ export default function WorklogPage() {
 
   const fetchWorklogs = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    console.log("当前用户 ID：", user?.id);
-    if (!user?.id) {
-      console.warn("未获取到用户信息，跳过 worklog 查询");
-      return;
-    }
-  
+    if (!user?.id) return;
+
     const { data, error } = await supabase
       .from("worklogs")
-      .select("*, project:projects(name)") // ✅ 正确别名写法
+      .select("*, project:projects(name)")
       .eq("user_id", user.id)
       .order("date", { ascending: false });
-  
-    console.log("📦 获取到的 worklogs 数据：", data); // 改进日志格式
-  
+
     if (!error && data) {
       const enriched = data.map((w: any) => ({
         ...w,
-        project_name: w.project?.name ?? "无项目", // ✅ 显示项目名称
+        project_name: w.project?.name ?? t("无项目", lang),
       }));
       setWorklogs(enriched);
     } else {
-      console.error("查询失败", error);
+      alert(t("加载失败：", lang) + (error?.message || ""));
     }
   };
 
@@ -89,10 +86,10 @@ export default function WorklogPage() {
   const handleSubmit = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
-      alert("用户信息获取失败，请重新登录");
+      alert(t("用户信息获取失败，请重新登录", lang));
       return;
     }
-  
+
     const payload = {
       date: formData.date,
       start_time: formData.start_time,
@@ -103,17 +100,16 @@ export default function WorklogPage() {
       project_id: formData.project_id || null,
       user_id: user.id,
     };
-    
-  
+
     const { error } = editingId
       ? await supabase.from("worklogs").update(payload).eq("id", editingId)
       : await supabase.from("worklogs").insert(payload);
-  
+
     if (!error) {
       resetForm();
-      await fetchWorklogs(); // 👈 这里才是真正刷新列表的位置
+      await fetchWorklogs();
     } else {
-      alert("保存失败: " + error.message);
+      alert(t("保存失败：", lang) + error.message);
     }
   };
 
@@ -124,8 +120,10 @@ export default function WorklogPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("worklogs").delete().eq("id", id);
-    fetchWorklogs();
+    if (!confirm(t("确定要删除这条记录吗？", lang))) return;
+    const { error } = await supabase.from("worklogs").delete().eq("id", id);
+    if (!error) fetchWorklogs();
+    else alert(t("删除失败：", lang) + error.message);
   };
 
   const resetForm = () => {
@@ -139,26 +137,44 @@ export default function WorklogPage() {
       project_id: null,
     });
     setEditingId(null);
-    setShowForm(false); // 只负责重置，不负责刷新
+    setShowForm(false);
   };
 
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(worklogs);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "WorkLogs");
-    XLSX.writeFile(wb, `worklogs_${new Date().toISOString().split("T")[0]}.xlsx`);
-  };
+    const data = worklogs.map((w) => ({
+      [t("日期", lang)]: w.date,
+      [t("出发时间", lang)]: w.start_time,
+      [t("回家时间", lang)]: w.end_time,
+      [t("总工时", lang)]: w.hours,
+      [t("项目", lang)]: w.project_name,
+      [t("地点", lang)]: w.location,
+      [t("备注", lang)]: w.note,
+    }));
 
-  // 添加调试日志
-  console.log("📋 正在渲染 worklogs：", worklogs);
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t("工程时间记录", lang));
+    XLSX.writeFile(wb, `${t("工程时间记录", lang)}_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
 
   return (
     <AuthGuard>
-      <div style={{ padding: "20px", fontFamily: "sans-serif", maxWidth: 1200, margin: "auto" }}>
-        <h2>🛠 工程时间记录</h2>
+      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, margin: "auto" }}>
+        <h2>🛠 {t("工程时间记录", lang)}</h2>
+
         <div style={{ marginBottom: 12, display: "flex", gap: 12 }}>
-          <button onClick={() => { resetForm(); setShowForm(true); }} style={{ backgroundColor: "green", color: "white", padding: "8px 16px" }}>＋ 新增记录</button>
-          <button onClick={exportToExcel} style={{ backgroundColor: "#007bff", color: "white", padding: "8px 16px" }}>⬇️ 导出为 Excel</button>
+          <button
+            onClick={() => { resetForm(); setShowForm(true); }}
+            style={{ backgroundColor: "green", color: "white", padding: "8px 16px" }}
+          >
+            ＋ {t("新增记录", lang)}
+          </button>
+          <button
+            onClick={exportToExcel}
+            style={{ backgroundColor: "#007bff", color: "white", padding: "8px 16px" }}
+          >
+            ⬇️ {t("导出为Excel", lang)}
+          </button>
         </div>
 
         {showForm && (
@@ -171,50 +187,72 @@ export default function WorklogPage() {
                   <td><input type="time" name="end_time" value={formData.end_time} onChange={handleChange} /></td>
                   <td>
                     <select name="project_id" value={formData.project_id ?? ""} onChange={handleChange}>
-                      <option value="">请选择项目</option>
-                      {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      <option value="">{t("请选择项目", lang)}</option>
+                      {projects.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
                     </select>
                   </td>
-                  <td><input placeholder="地点" name="location" value={formData.location} onChange={handleChange} /></td>
-                  <td><textarea placeholder="备注（施工内容）" name="note" value={formData.note} onChange={handleChange} /></td>
-                  <td><button onClick={handleSubmit} style={{ backgroundColor: "green", color: "white", padding: "6px 12px" }}>保存</button></td>
+                  <td><input placeholder={t("地点", lang)} name="location" value={formData.location} onChange={handleChange} /></td>
+                  <td><textarea placeholder={t("备注（施工内容）", lang)} name="note" value={formData.note} onChange={handleChange} /></td>
+                  <td>
+                    <button
+                      onClick={handleSubmit}
+                      style={{ backgroundColor: "green", color: "white", padding: "6px 12px" }}
+                    >
+                      {t("保存", lang)}
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
         )}
 
-        <h4>📋 已记录项目</h4>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc", display: "table" }}>
+        <h4>📋 {t("已记录项目", lang)}</h4>
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
-              {"日期,出发时间,回家时间,总工时,项目,地点,备注,操作".split(",").map((h) => (
+              {[t("日期", lang), t("出发时间", lang), t("回家时间", lang), t("总工时", lang), t("项目", lang), t("地点", lang), t("备注", lang), t("操作", lang)].map((h) => (
                 <th key={h} style={{ border: "1px solid #ccc", padding: "10px 16px", backgroundColor: "#f0f0f0", textAlign: "left" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {worklogs.length === 0 && <tr><td colSpan={8} style={{textAlign: "center", padding: "20px"}}>⚠️ 暂无记录，请先新增</td></tr>}
-            {worklogs.map((log) => {
-              console.log("渲染单行数据:", log.id, log.start_time, log.project_name, log.location);
-              return (
-                <tr key={log.id}>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.date || "无日期"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.start_time || "无时间"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.end_time || "无时间"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.hours || 0}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.project_name || "无项目"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.location || "无地点"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.note || "无备注"}</td>
-                  <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => handleEdit(log)} style={{ backgroundColor: "#ffc107", padding: "4px 8px" }}>编辑</button>
-                      <button onClick={() => handleDelete(log.id!)} style={{ backgroundColor: "red", color: "white", padding: "4px 8px" }}>删除</button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {worklogs.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ textAlign: "center", padding: 20 }}>
+                  ⚠️ {t("暂无记录，请先新增", lang)}
+                </td>
+              </tr>
+            )}
+            {worklogs.map((log) => (
+              <tr key={log.id}>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.date || t("无日期", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.start_time || t("无时间", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.end_time || t("无时间", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.hours || 0}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.project_name || t("无项目", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.location || t("无地点", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.note || t("无备注", lang)}</td>
+                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => handleEdit(log)}
+                      style={{ backgroundColor: "#ffc107", padding: "4px 8px" }}
+                    >
+                      {t("编辑", lang)}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(log.id!)}
+                      style={{ backgroundColor: "red", color: "white", padding: "4px 8px" }}
+                    >
+                      {t("删除", lang)}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

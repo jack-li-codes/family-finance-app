@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { Transaction } from "../types";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
 
 type Account = {
   id: string;
@@ -21,15 +23,16 @@ type Account = {
 };
 
 export default function BalanceContent() {
+  const { lang } = useLang();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [checking, setChecking] = useState(true); // ✅ 增加检查状态
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setChecking(false); // 即使无用户也结束 loading
+        setChecking(false);
         return;
       }
 
@@ -45,7 +48,7 @@ export default function BalanceContent() {
 
       if (txData) setTransactions(txData);
       if (accData) setAccounts(accData);
-      setChecking(false); // ✅ 数据加载完成
+      setChecking(false);
     };
 
     fetchData();
@@ -63,30 +66,35 @@ export default function BalanceContent() {
 
   const exportToExcel = () => {
     const exportData = accounts.map((acc) => ({
-      "账户名称": acc.name,
-      "币种": acc.currency,
-      "初始余额": typeof acc.initial_balance === "number" ? acc.initial_balance.toFixed(2) : "",
-      "当前余额": getCurrentBalance(acc).toFixed(2),
-      "备注": acc.note,
+      [t("账户名称", lang)]: acc.name,
+      [t("币种", lang)]: acc.currency,
+      [t("初始余额", lang)]: typeof acc.initial_balance === "number" ? acc.initial_balance.toFixed(2) : "",
+      [t("当前余额", lang)]: getCurrentBalance(acc).toFixed(2),
+      [t("备注", lang)]: acc.note,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "账户余额");
+    // 工作表名与文件名根据语言切换
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      lang === "zh" ? "账户余额" : "Balance"
+    );
 
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
     });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, "账户余额.xlsx");
+    saveAs(blob, (lang === "zh" ? "账户余额" : "Balance") + ".xlsx");
   };
 
-  if (checking) return null; // ✅ 避免未登录或加载中时渲染
+  if (checking) return null;
 
   return (
     <div style={{ padding: "20px", maxWidth: "1000px", margin: "auto", fontFamily: "sans-serif" }}>
-      <h1>📊 账户余额快照</h1>
+      <h1>📊 {t("账户余额快照", lang)}</h1>
 
       <button
         onClick={exportToExcel}
@@ -100,13 +108,13 @@ export default function BalanceContent() {
           cursor: "pointer",
         }}
       >
-        导出为 Excel
+        📤 {t("导出为 Excel", lang)}
       </button>
 
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
         <thead>
           <tr>
-            {["账户名称", "币种", "初始余额", "当前余额", "备注"].map((header) => (
+            {[t("账户名称", lang), t("币种", lang), t("初始余额", lang), t("当前余额", lang), t("备注", lang)].map((header) => (
               <th
                 key={header}
                 style={{

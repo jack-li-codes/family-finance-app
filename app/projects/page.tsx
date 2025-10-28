@@ -3,28 +3,38 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import AuthGuard from "@/components/AuthGuard";
+import { useLang } from "@/app/i18n-context";
+import { t } from "@/app/i18n";
 
 interface Project {
   id?: string;
   user_id?: string;
   name: string;
   location: string;
-  expected_start_date: string;
+  expected_start_date: string; // YYYY-MM-DD or ""
   expected_end_date: string;
   actual_start_date: string;
   actual_end_date: string;
   note: string;
 }
 
+// Local YYYY-MM-DD (avoid timezone shift)
+const toLocalISODate = (d: Date) => {
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 10);
+};
+
 export default function ProjectsPage() {
+  const { lang } = useLang();
   const [projects, setProjects] = useState<Project[]>([]);
   const [formData, setFormData] = useState<Omit<Project, "id" | "user_id">>({
     name: "",
     location: "",
-    expected_start_date: "",
-    expected_end_date: "",
-    actual_start_date: "",
-    actual_end_date: "",
+    expected_start_date: "", // set in resetForm()
+    expected_end_date: "",   // blank by default
+    actual_start_date: "",   // set in resetForm()
+    actual_end_date: "",     // blank by default
     note: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,18 +55,22 @@ export default function ProjectsPage() {
     if (data) setProjects(data);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // New form: Start = today; End = blank
   const resetForm = () => {
+    const today = toLocalISODate(new Date());
     setFormData({
       name: "",
       location: "",
-      expected_start_date: "",
+      expected_start_date: today,
       expected_end_date: "",
-      actual_start_date: "",
+      actual_start_date: today,
       actual_end_date: "",
       note: "",
     });
@@ -82,60 +96,165 @@ export default function ProjectsPage() {
       : await supabase.from("projects").insert(payload);
 
     if (error) {
-      alert("保存失败: " + error.message);
+      alert(t("保存失败：", lang) + error.message);
     } else {
+      setShowForm(false);
       resetForm();
       fetchProjects();
     }
   };
 
   const handleEdit = (project: Project) => {
-    setFormData(project);
+    const { id, user_id, ...rest } = project;
+    setFormData({
+      ...rest,
+      expected_start_date: rest.expected_start_date || "",
+      expected_end_date: rest.expected_end_date || "",
+      actual_start_date: rest.actual_start_date || "",
+      actual_end_date: rest.actual_end_date || "",
+    });
     setEditingId(project.id!);
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm(t("确定要删除这个项目吗？", lang))) return;
     await supabase.from("projects").delete().eq("id", id);
     fetchProjects();
   };
 
+  const headers = [
+    "名称",
+    "地点",
+    "预计开始",
+    "预计结束",
+    "实际开始",
+    "实际结束",
+    "备注",
+    "操作",
+  ];
+
   return (
     <AuthGuard>
       <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, margin: "auto" }}>
-        <h3>🗂 项目管理</h3>
-        <button onClick={() => { resetForm(); setShowForm(true); }} style={{ backgroundColor: "green", color: "white", padding: "6px 12px", marginBottom: 12 }}>＋ 新建项目</button>
+        <h3>🗂 {t("项目管理", lang)}</h3>
+
+        <button
+          onClick={() => { resetForm(); setShowForm(true); }}
+          style={{ backgroundColor: "green", color: "white", padding: "6px 12px", marginBottom: 12 }}
+          aria-label={t("新建项目", lang)}
+          title={t("新建项目", lang)}
+        >
+          ＋ {t("新建项目", lang)}
+        </button>
 
         {showForm && (
           <table style={{ width: "100%", marginBottom: 24, borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {["名称", "地点", "预计开始", "预计结束", "实际开始", "实际结束", "备注", "操作"].map((h) => (
-                  <th key={h} style={{ borderBottom: "1px solid #ccc", textAlign: "left", padding: 8 }}>{h}</th>
+                {headers.map((h) => (
+                  <th
+                    key={`form-${h}`}
+                    style={{ borderBottom: "1px solid #ccc", textAlign: "left", padding: 8 }}
+                  >
+                    {t(h, lang)}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><input name="name" value={formData.name} onChange={handleChange} /></td>
-                <td><input name="location" value={formData.location} onChange={handleChange} /></td>
-                <td><input type="date" name="expected_start_date" value={formData.expected_start_date} onChange={handleChange} /></td>
-                <td><input type="date" name="expected_end_date" value={formData.expected_end_date} onChange={handleChange} /></td>
-                <td><input type="date" name="actual_start_date" value={formData.actual_start_date} onChange={handleChange} /></td>
-                <td><input type="date" name="actual_end_date" value={formData.actual_end_date} onChange={handleChange} /></td>
-                <td><textarea name="note" value={formData.note} onChange={handleChange} /></td>
-                <td><button onClick={handleSubmit} style={{ backgroundColor: "green", color: "white", padding: "6px 12px" }}>保存</button></td>
+                <td>
+                  <input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder={t("名称", lang)}
+                  />
+                </td>
+                <td>
+                  <input
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder={t("地点", lang)}
+                  />
+                </td>
+
+                {/* Starts: default today; Ends: default blank. All in English locale */}
+                <td>
+                  <input
+                    type="date"
+                    name="expected_start_date"
+                    lang="en-CA"
+                    value={formData.expected_start_date || toLocalISODate(new Date())}
+                    onChange={handleChange}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    name="expected_end_date"
+                    lang="en-CA"
+                    placeholder="YYYY-MM-DD"
+                    value={formData.expected_end_date || ""}
+                    onChange={handleChange}
+                    min={formData.expected_start_date || undefined}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    name="actual_start_date"
+                    lang="en-CA"
+                    value={formData.actual_start_date || toLocalISODate(new Date())}
+                    onChange={handleChange}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    name="actual_end_date"
+                    lang="en-CA"
+                    placeholder="YYYY-MM-DD"
+                    value={formData.actual_end_date || ""}
+                    onChange={handleChange}
+                    min={formData.actual_start_date || undefined}
+                  />
+                </td>
+
+                <td>
+                  <textarea
+                    name="note"
+                    value={formData.note}
+                    onChange={handleChange}
+                    placeholder={t("备注", lang)}
+                  />
+                </td>
+                <td>
+                  <button
+                    onClick={handleSubmit}
+                    style={{ backgroundColor: "green", color: "white", padding: "6px 12px" }}
+                  >
+                    {t("保存", lang)}
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         )}
 
-        <h4>📁 所有项目</h4>
+        <h4>📁 {t("所有项目", lang)}</h4>
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
-              {["名称", "地点", "预计开始", "预计结束", "实际开始", "实际结束", "备注", "操作"].map((h) => (
-                <th key={h} style={{ border: "1px solid #ccc", padding: 8, backgroundColor: "#f0f0f0" }}>{h}</th>
+              {headers.map((h) => (
+                <th
+                  key={`list-${h}`}
+                  style={{ border: "1px solid #ccc", padding: 8, backgroundColor: "#f0f0f0" }}
+                >
+                  {t(h, lang)}
+                </th>
               ))}
             </tr>
           </thead>
@@ -151,12 +270,29 @@ export default function ProjectsPage() {
                 <td style={{ border: "1px solid #ccc", padding: 8 }}>{p.note}</td>
                 <td style={{ border: "1px solid #ccc", padding: 8 }}>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => handleEdit(p)} style={{ backgroundColor: "#ffc107", padding: "4px 8px" }}>编辑</button>
-                    <button onClick={() => handleDelete(p.id!)} style={{ backgroundColor: "red", color: "white", padding: "4px 8px" }}>删除</button>
+                    <button
+                      onClick={() => handleEdit(p)}
+                      style={{ backgroundColor: "#ffc107", padding: "4px 8px" }}
+                    >
+                      {t("编辑", lang)}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.id!)}
+                      style={{ backgroundColor: "red", color: "white", padding: "4px 8px" }}
+                    >
+                      {t("删除", lang)}
+                    </button>
                   </div>
                 </td>
               </tr>
             ))}
+            {projects.length === 0 && (
+              <tr>
+                <td colSpan={headers.length} style={{ textAlign: "center", padding: 16 }}>
+                  {t("暂无数据。", lang)}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
