@@ -103,6 +103,9 @@ This project is a full-stack Next.js + Supabase application designed to help fam
 
       It is suitable for inclusion in résumés, university applications, and portfolio showcases.
 
+🚀 CI/CD with Vercel — 12+ production deployments with automated builds and real-time preview environments.
+
+
 👤 Author
 
 Jack Li
