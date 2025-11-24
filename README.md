@@ -1,38 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+📘 Family Finance App
 
-## Getting Started
+A clean, fast, and practical household finance management system built for real-life use.
 
-First, run the development server:
+This project is a full-stack Next.js + Supabase application designed to help families track accounts, manage transactions, categorize expenses, and generate monthly insights. It was created as part of a personal initiative to build a real financial tool for daily family use, and later expanded into a fully structured web application.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+🚀 Features
+🔐 User Authentication
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+      Secure login & registration via Supabase Auth
+      Protected routes with AuthGuard
+      Automatic redirect based on login status
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+💳 Account Management
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+      Add, edit, and delete multiple accounts
+      Track initial balance, initial date, and calculated balance
+      Real-time updates using database queries
 
-## Learn More
+💰 Transactions
 
-To learn more about Next.js, take a look at the following resources==hook自动部署:
+   Record income and expenses with detailed categories
+   Supports:
+      Income / Expense
+      Transfer between accounts
+      Custom categories (aligned with Excel financial workflow)
+      Data stored and retrieved from Supabase
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+📊 Statistics & Reports
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+      Monthly income/expense summary
+      Category-based breakdown
+      Transfer data automatically excluded from reports
 
-## Deploy on Vercel
+🛠 Project Modules (In Progress & Planned)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+      Engineering worklog tracking (time + cost)
+      Project materials module
+      Client tracking
+      Multi-device support
+      Mobile UI optimization
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-// test deploy
-// webhook test
+🧰 Tech Stack
+   
+   Frontend
+      Next.js (App Router)
+      React
+      Tailwind CSS
+      TypeScript
+
+   Backend / Storage
+      Supabase (PostgreSQL)
+      Supabase Auth
+      Edge Functions (planned)
+
+   Tools
+      Vercel Deployment
+      GitHub Actions (planned)
+
+📁 Project Structure
+      app/                # Next.js App Router pages
+      components/         # Reusable UI components
+      lib/                # Supabase client & helpers
+      supabase/           # Database schema & migrations (sanitized for open source)
+      public/             # Static assets
+
+📦 Getting Started
+   1. Install dependencies
+      npm install
+
+   2. Set environment variables
+
+      Create a .env.local file (not included for security):
+
+      NEXT_PUBLIC_SUPABASE_URL=your-url
+      NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+      SUPABASE_SERVICE_ROLE_KEY=your-service-role
+
+  3. Run development server
+      npm run dev
+
+
+      App runs at:
+      http://localhost:3000
+
+🌐 Deployment
+
+      This project is deployed on Vercel:
+
+      👉 https://family-finance-app.vercel.app
+      (demo)
+
+🎯 Purpose of the Project
+
+      This app was originally developed for real family budgeting needs and later expanded into a fully structured web application. It demonstrates:
+
+      Full-stack engineering ability
+      Database schema design
+      Authentication flow
+      Real-world financial logic
+      Practical UI/UX planning
+      Independent project planning and execution
+
+      It is suitable for inclusion in résumés, university applications, and portfolio showcases.
+
+👤 Author
+
+Jack Li
+High school student (Canada)
+Aspiring computer science major
+Interested in full-stack development, AI tools, and practical software engineering.
