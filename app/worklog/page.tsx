@@ -159,7 +159,7 @@ export default function WorklogPage() {
 
   return (
     <AuthGuard>
-      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, margin: "auto" }}>
+      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, marginLeft: 0, marginRight: "auto" }}>
         <h2>🛠 {t("工程时间记录", lang)}</h2>
 
         <div style={{ marginBottom: 12, display: "flex", gap: 12 }}>

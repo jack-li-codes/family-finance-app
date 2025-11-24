@@ -1,4 +1,4 @@
-// app/types.ts
+// app/types.ts21
 export type Transaction = {
     id: string;
     user_id: string;

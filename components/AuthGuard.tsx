@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [checking, setChecking] = useState(true); // 新增：等待 session 加载完成
+  const [checking, setChecking] = useState(true); // Added: wait for session to load
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -17,12 +17,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       } else {
         setAuthenticated(true);
       }
-      setChecking(false); // 不管有没有 session 都结束加载
+      setChecking(false); // End loading whether session exists or not
     });
   }, [router]);
 
-  if (checking) return null; // ⏳ 登录状态检查中，先不渲染任何内容
-  if (!authenticated) return null; // ❌ 未登录，不显示子组件
+  if (checking) return null; // ⏳ Checking login status, don't render anything yet
+  if (!authenticated) return null; // ❌ Not logged in, don't show children
 
   return <>{children}</>;
 }

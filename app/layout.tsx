@@ -8,7 +8,7 @@ import { LangProvider, useLang } from "./i18n-context";
 import { t } from "./i18n";
 import { useEffect } from "react";
 
-/** 同步 <html lang>，确保浏览器控件（如日期选择器）语言正确 */
+/** Sync <html lang> to ensure browser controls (e.g., date picker) display in correct language */
 function LangSetter() {
   const { lang } = useLang();
   useEffect(() => {
@@ -17,13 +17,14 @@ function LangSetter() {
   return null;
 }
 
-/** 顶部导航 */
+/** Top navigation */
 function Nav() {
   const pathname = usePathname();
   const { lang, setLang } = useLang();
 
   const navItems = [
     { icon: "💳", key: "账户管理", href: "/accounts" },
+    { icon: "💰", key: "固定花销管理", href: "/fixed-expenses" },
     { icon: "📁", key: "收入/支出", href: "/transactions" },
     { icon: "📊", key: "收支汇总", href: "/summary" },
     { icon: "📊", key: "账户总揽", href: "/account-overview" },
@@ -83,7 +84,7 @@ function Nav() {
   );
 }
 
-/** 页面主结构 */
+/** Main page structure */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

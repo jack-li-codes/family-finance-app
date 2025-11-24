@@ -1,4 +1,5 @@
 // app/page.tsx
+"use client";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
 

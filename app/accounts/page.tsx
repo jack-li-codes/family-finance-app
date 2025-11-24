@@ -9,7 +9,7 @@ import FixedExpenses from "@/components/FixedExpenses";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
 
-// 账户类别选项（值保留中文以兼容历史数据；显示用 t()）
+// Account category options (values kept in Chinese for backward compatibility; display uses t())
 const ACCOUNT_CATEGORY_OPTIONS = [
   "活期账户",
   "信用账户",
@@ -39,7 +39,7 @@ type Transaction = {
   [key: string]: any;
 };
 
-// 本地时区 YYYY-MM-DD（避免跨日）
+// Local timezone YYYY-MM-DD (avoid date shift)
 const toLocalISODate = (d: Date) => {
   const off = d.getTimezoneOffset();
   const local = new Date(d.getTime() - off * 60000);
@@ -199,7 +199,7 @@ export default function AccountsPage() {
       card_number: "",
       note: "",
       initial_balance: 0,
-      // 👉 默认今天；如果想默认空，把下一行改成 null
+      // 👉 Defaults to today; change next line to null for empty default
       initial_date: toLocalISODate(new Date()),
     });
     setEditingId(null);
@@ -281,7 +281,7 @@ export default function AccountsPage() {
                         ))}
                       </select>
                     ) : key === "initial_date" ? (
-                      // 👉 统一使用原生日期选择器（点击即出日历）
+                      // 👉 Use native date picker (calendar pops up on click)
                       <input
                         name="initial_date"
                         type="date"

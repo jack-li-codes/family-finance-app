@@ -136,7 +136,7 @@ export default function ProjectsPage() {
 
   return (
     <AuthGuard>
-      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, margin: "auto" }}>
+      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, marginLeft: 0, marginRight: "auto" }}>
         <h3>🗂 {t("项目管理", lang)}</h3>
 
         <button

@@ -2,16 +2,17 @@
 export type Lang = 'zh' | 'en';
 
 const base: Record<string, string> = {
-   // ===== 顶部导航 / 通用 =====
+   // ===== Top Navigation / General =====
    "账户管理": "Accounts",
    "收入/支出": "Transactions",
-   "收入 / 支出": "Transactions",                // 兼容带空格
-   "收入 / 支出记录": "Transactions",            // 兼容早期标题
+   "收入 / 支出": "Transactions",                // Compatible with spacing
+   "收入 / 支出记录": "Transactions",            // Compatible with earlier title
    "收支汇总": "Summary",
    "账户总揽": "Account Overview",
-   "账户总览": "Account Overview",               // 兼容另一种写法
+   "账户总览": "Account Overview",               // Compatible with alternative spelling
    "工程记录": "Worklog",
    "工程时间记录": "Worklog",
+   "已记录项目": "Recorded Work Items",
    "账户余额": "Balance",
    "账户余额快照": "Balance Snapshot",
    "项目管理": "Projects",
@@ -28,21 +29,21 @@ const base: Record<string, string> = {
    "保存": "Save",
    "取消": "Cancel",
    "操作": "Actions",
- 
-   // 导出
+
+   // Export
    "导出为Excel": "Export to Excel",
-   "导出为 Excel": "Export to Excel",           // 兼容空格写法
+   "导出为 Excel": "Export to Excel",           // Compatible with spacing
    "导出 Excel": "Export to Excel",
    "导出中…": "Exporting…",
- 
-   // 加载/空态
+
+   // Loading/Empty states
    "加载中…": "Loading…",
    "加载失败：": "Load failed: ",
    "暂无数据。": "No data.",
    "暂无数据": "No data.",
    "暂无记录，请先新增": "No records yet. Please add one first.",
- 
-   // ===== 表头 / 表单 =====
+
+   // ===== Table Headers / Form Fields =====
    "账户名称": "Account Name",
    "日期": "Date",
    "类型": "Type",
@@ -66,13 +67,13 @@ const base: Record<string, string> = {
    "总工时": "Total Hours",
    "项目": "Project",
    "请选择项目": "Select Project",
- 
-   // 下拉占位
+
+   // Dropdown placeholders
    "选择分类": "Select Category",
    "选择二级分类": "Select Subcategory",
    "选择账户": "Select Account",
- 
-   // 记录缺省展示
+
+   // Default display values for missing data
    "无日期": "No Date",
    "无时间": "No Time",
    "无项目": "No Project",
@@ -80,13 +81,13 @@ const base: Record<string, string> = {
    "无备注": "No Note",
    "未知账户": "Unknown Account",
    "未分类": "Uncategorized",
- 
-   // ===== 类型 =====
+
+   // ===== Transaction Types =====
    "收入": "Income",
    "支出": "Expense",
    "转账": "Transfer",
- 
-   // ===== 账户总览 / 概览页用语 =====
+
+   // ===== Account Overview Page Terminology =====
    "未分配账户": "Unassigned Account",
   // "账户": "Account",
    "上月余额": "Prev Balance",
@@ -104,40 +105,42 @@ const base: Record<string, string> = {
    "无收入明细": "No income items",
    "无支出明细": "No expense items",
    "转账（仅展示，不计入汇总）": "Transfers (shown only, not included in totals)",
- 
-   // ===== 页面上的提示/对话框 =====
+
+   // ===== Page Messages / Dialogs =====
    "账户名称和所有人不能为空": "Account name and owner are required",
    "未登录用户，无法添加账户": "Not signed in; cannot add account",
    "确定要删除这个账户吗？": "Are you sure you want to delete this account?",
    "确定要删除这条记录吗？": "Are you sure you want to delete this record?",
    "确定要删除这个项目吗？": "Are you sure you want to delete this project?",
    "操作失败：": "Operation failed: ",
-   "❌ 操作失败：": "Operation failed: ",       // 兼容带表情写法
+   "❌ 操作失败：": "Operation failed: ",       // Compatible with emoji version
    "删除失败：": "Delete failed: ",
    "❌ 删除失败：": "Delete failed: ",
    "保存失败：": "Save failed: ",
    "用户信息获取失败，请重新登录": "User info missing. Please sign in again.",
- 
-   // ===== 账户页：汇总区（正/负标签） =====
+
+   // ===== Accounts Page: Summary Section (Positive/Negative Labels) =====
    "家庭账户管理": "Account Management",
    "家庭账户总余额": "Total Family Balance",
    "（正）": "(Positive)",
    "（负）": "(Negative)",
- 
-   // ===== 固定支出卡片（FixedExpenses） =====
-   "当前月份固定花销": "Fixed Expenses This Month",
+
+   // ===== Fixed Expenses Card (FixedExpenses Component) =====
+   "当前月份固定花销": "Monthly Fixed Expenses",
+   "当前月固定花销": "Monthly Fixed Expenses",
+   "固定花销管理": "Fixed Expenses Management",
    "房贷": "Mortgage",
    "汽车保险": "Car Insurance",
    "房屋保险": "Home Insurance",
-   "车 lease": "Car Lease",                    // 你代码里出现过这个写法
+   "车 lease": "Car Lease",                    // Appeared in your code with this spelling
    "地税": "Property Tax",
    "水电": "Utilities",
    "燃气": "Gas",
-   "煤气": "Gas",                              // 兼容另一写法
+   "煤气": "Gas",                              // Compatible with alternative spelling
    "宽带": "Internet",
    "电话费": "Phone Bill",
- 
-   // ===== 分类（一级 + 二级）——保留中文 value，显示时翻译 =====
+
+   // ===== Categories (Primary + Secondary) - Keep Chinese values, translate when displayed =====
    "食物": "Food",
    "买菜": "Groceries",
    "餐厅/外卖": "Restaurant/Takeout",
@@ -217,11 +220,11 @@ const base: Record<string, string> = {
     "现金账户": "Cash Account",
     "社保账户": "Social Account",
 
- 
-   // ===== 收支汇总（SummaryPage）用到 =====
+
+   // ===== Summary Page (SummaryPage) Terminology =====
    "每月收支分类汇总（仅 CAD）": "Monthly Category Summary (CAD only)",
    "（占 {n}%）": "(Share {n}%)"
-  
+
 
 
 
@@ -229,7 +232,7 @@ const base: Record<string, string> = {
 };
 
 export const dict = {
-  zh: {} as Record<string, string>, // 中文显示原文
+  zh: {} as Record<string, string>, // Chinese displays original text
   en: base,
 };
 

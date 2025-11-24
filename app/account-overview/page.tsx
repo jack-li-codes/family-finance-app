@@ -7,7 +7,7 @@ import * as XLSX from "xlsx";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
 
-// ====== 类型 ======
+// ====== Types ======
 type Account = {
   id: string;
   user_id: string;
@@ -21,10 +21,10 @@ type Transaction = {
   user_id: string;
   account_id: string | null;
   date: string; // "YYYY-MM-DD"
-  type: string; // "收入" | "支出" | "转账"  或  "income" | "expense" | "transfer"
+  type: string; // "收入" | "支出" | "转账"  or  "income" | "expense" | "transfer"
   category?: string;
   subcategory?: string;
-  amount: number; // 收入为正，支出为负
+  amount: number; // Income is positive, expenses are negative
   note?: string;
 };
 
@@ -32,10 +32,10 @@ type MonthBucket = {
   income: Transaction[];
   expense: Transaction[];
   transfer: Transaction[];
-  incomeTotal: number;   // 金额原始正负
-  expenseTotal: number;  // 金额原始正负（支出通常为负）
-  prevBalance: number;   // 上月末余额（含初始）
-  net: number;           // 净额 = incomeTotal + expenseTotal
+  incomeTotal: number;   // Original positive/negative amounts
+  expenseTotal: number;  // Original positive/negative amounts (expenses are typically negative)
+  prevBalance: number;   // Previous month-end balance (including initial)
+  net: number;           // Net amount = incomeTotal + expenseTotal
 };
 
 type ByAccount = Record<
@@ -43,13 +43,13 @@ type ByAccount = Record<
   {
     account: Account;
     months: Record<string, MonthBucket>; // YYYY-MM
-    totalIncome: number;  // 累加各月 incomeTotal
-    totalExpense: number; // 累加各月 expenseTotal（为负）
+    totalIncome: number;  // Sum of monthly incomeTotal
+    totalExpense: number; // Sum of monthly expenseTotal (negative)
     totalNet: number;     // totalIncome + totalExpense
   }
 >;
 
-// ====== 工具函数 ======
+// ====== Utility Functions ======
 const fmt = (n: number) =>
   Number(n || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -70,12 +70,12 @@ const prevMonth = (yyyyMM: string) => {
 const sanitizeSheetName = (name: string) =>
   (name || "Sheet").replace(/[\\\/\?\*\[\]\:]/g, "_").slice(0, 31);
 
-// 简单类型判断（兼容中英文）
+// Simple type checking (compatible with Chinese and English)
 const isIncomeType  = (tx: Transaction) => tx.type === "收入" || tx.type === "income";
 const isExpenseType = (tx: Transaction) => tx.type === "支出" || tx.type === "expense";
 const isTransfer    = (tx: Transaction) => tx.type === "转账" || tx.type === "transfer";
 
-// ====== 页面 ======
+// ====== Page Component ======
 export default function AccountOverviewPage() {
   const { lang } = useLang();
 
@@ -95,7 +95,7 @@ export default function AccountOverviewPage() {
         return;
       }
 
-      // 读取账户（包含 initial_balance / initial_date）
+      // Load accounts (including initial_balance / initial_date)
       const { data: accData, error: accErr } = await supabase
         .from("accounts")
         .select("id, user_id, name, initial_balance, initial_date")
@@ -103,7 +103,7 @@ export default function AccountOverviewPage() {
         .order("name", { ascending: true });
       if (accErr) console.error(accErr);
 
-      // 读取交易
+      // Load transactions
       const { data: txData, error: txErr } = await supabase
         .from("transactions")
         .select("*")
@@ -117,16 +117,16 @@ export default function AccountOverviewPage() {
     })();
   }, []);
 
-  // —— 分组统计（账户 → 月份）
+  // —— Group statistics (account → month)
   const grouped: ByAccount = useMemo(() => {
     if (!transactions.length) return {} as ByAccount;
 
     const accMap: Record<string, Account> = {};
     accounts.forEach((a) => (accMap[a.id] = a));
 
-    // 按账户分组
+    // Group by account
     const byAcc: Record<string, Transaction[]> = {};
-    for (const tx of transactions) { // ← 使用 tx，避免与翻译函数 t 冲突
+    for (const tx of transactions) { // ← Use tx to avoid conflict with translation function t
       const key = tx.account_id || t("未分配账户", lang);
       (byAcc[key] ||= []).push(tx);
     }
@@ -140,20 +140,20 @@ export default function AccountOverviewPage() {
       const months: Record<string, MonthBucket> = {};
       const monthSet = new Set<string>();
       list.forEach((tx) => tx.date && monthSet.add(ym(tx.date)));
-      const monthKeys = [...monthSet].filter(Boolean).sort(); // 递增
+      const monthKeys = [...monthSet].filter(Boolean).sort(); // ascending
 
-      // —— 截至某月末的余额（含初始；转账不计入；收入/支出按“原始正负”相加）
+      // —— Balance until end of month (including initial; transfers not included; income/expense added by original positive/negative)
       const calcBalanceUntilMonthEnd = (targetYM: string) => {
         const initBal = Number(account.initial_balance || 0);
         const initDate = account.initial_date || null;
 
         let bal = initBal;
         for (const tx of list) {
-          if (initDate && tx.date < initDate) continue; // 初始日期之前不计
+          if (initDate && tx.date < initDate) continue; // Don't count before initial date
           const tYM = ym(tx.date);
           if (!tYM || tYM > targetYM) break;
           if (isTransfer(tx)) continue;
-          bal += Number(tx.amount || 0); // 直接按原始正负累加
+          bal += Number(tx.amount || 0); // Directly accumulate by original positive/negative
         }
         return bal;
       };
@@ -171,14 +171,14 @@ export default function AccountOverviewPage() {
         }
 
         const incomeTotal  = income.reduce((s, tx) => s + Number(tx.amount || 0), 0);
-        const expenseTotal = expense.reduce((s, tx) => s + Number(tx.amount || 0), 0); // 支出一般是负
+        const expenseTotal = expense.reduce((s, tx) => s + Number(tx.amount || 0), 0); // Expenses are generally negative
         const prevBal      = calcBalanceUntilMonthEnd(prevMonth(m));
-        const net          = incomeTotal + expenseTotal; // 支出本身为负
+        const net          = incomeTotal + expenseTotal; // Expenses themselves are negative
 
         months[m] = { income, expense, transfer, incomeTotal, expenseTotal, prevBalance: prevBal, net };
       }
 
-      // 账户层合计
+      // Account-level totals
       let totalIncome = 0;
       let totalExpense = 0;
       Object.values(months).forEach((mm) => {
@@ -196,9 +196,9 @@ export default function AccountOverviewPage() {
     }
 
     return res;
-  }, [transactions, accounts, lang]); // 语言切换时，“未分配账户”分组标题也更新
+  }, [transactions, accounts, lang]); // When language switches, the "Unassigned Account" group title also updates
 
-  // —— 导出 Excel（同样遵循“支出为负、净额=加总”）
+  // —— Export Excel (also follows "expenses are negative, net amount = sum")
   const handleExportExcel = async () => {
     setExporting(true);
     try {

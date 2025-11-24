@@ -75,7 +75,7 @@ export default function BalanceContent() {
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    // 工作表名与文件名根据语言切换
+    // Worksheet name and filename switch based on language
     XLSX.utils.book_append_sheet(
       workbook,
       worksheet,
@@ -93,7 +93,7 @@ export default function BalanceContent() {
   if (checking) return null;
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1000px", margin: "auto", fontFamily: "sans-serif" }}>
+    <div style={{ padding: "20px", maxWidth: "1000px", marginLeft: 0, marginRight: "auto", fontFamily: "sans-serif" }}>
       <h1>📊 {t("账户余额快照", lang)}</h1>
 
       <button

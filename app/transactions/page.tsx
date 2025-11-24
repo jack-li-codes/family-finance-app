@@ -22,7 +22,7 @@ const categoryOptions: Record<string, string[]> = {
   "其他": ["其他"]
 };
 
-// 生成本地时区的 YYYY-MM-DD（避免时区串日）
+// Generate local timezone YYYY-MM-DD (avoid date shift across timezones)
 const toLocalISODate = (d: Date) => {
   const off = d.getTimezoneOffset();
   const local = new Date(d.getTime() - off * 60000);
@@ -55,7 +55,7 @@ export default function TransactionsPage() {
         setUserId(user.id);
         setFormData((f) => ({ ...f, user_id: user.id }));
         fetchTransactions(user.id);
-        fetchAccounts();
+        fetchAccounts(user.id);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,8 +74,11 @@ export default function TransactionsPage() {
     if (data) setTransactions(data);
   };
 
-  const fetchAccounts = async () => {
-    const { data, error } = await supabase.from("accounts").select("id, name");
+  const fetchAccounts = async (uid: string) => {
+    const { data, error } = await supabase
+      .from("accounts")
+      .select("id, name")
+      .eq("user_id", uid);
     if (error) {
       alert(`${t("❌ 操作失败：", lang)}${error.message}`);
       return;
@@ -181,7 +184,7 @@ export default function TransactionsPage() {
             setEditingId(null);
             setFormData((f) => ({
               ...f,
-              // 新增时，自动把日期设为“今天”（如果还没值）
+              // When adding new entry, auto-set date to "today" (if not already set)
               date: f.date || toLocalISODate(new Date()),
               amount: undefined as unknown as number
             }));

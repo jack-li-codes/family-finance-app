@@ -20,7 +20,7 @@ export default function LoginPage() {
     if (error) {
       setMessage(t("登录失败，请检查邮箱和密码", lang))
     } else {
-      router.push('/accounts') // 登录成功跳转
+      router.push('/accounts') // Redirect on successful login
     }
   }
 
