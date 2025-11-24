@@ -319,8 +319,8 @@ export default function FixedExpensesPage() {
       { icon: '📅', name: '地税', amount: 1560, note: '（4月1次，6月25号）', currency: 'CAD', sort_order: 50, is_active: true },
       { icon: '💡', name: '水电', amount: 130, note: '（每月20号）≈', currency: 'CAD', sort_order: 60, is_active: true },
       { icon: '🔥', name: '煤气', amount: 130, note: '（每月20号）≈', currency: 'CAD', sort_order: 70, is_active: true },
-      { icon: '🌐', name: '宽带', amount: 74, note: '（每月5号，LJS信用卡）', currency: 'CAD', sort_order: 80, is_active: true },
-      { icon: '📱', name: '电话费', amount: 169.47, note: '（每月25号，JH信用卡）', currency: 'CAD', sort_order: 90, is_active: true }
+      { icon: '🌐', name: '宽带', amount: 74, note: '（每月5号，信用卡A）', currency: 'CAD', sort_order: 80, is_active: true },
+      { icon: '📱', name: '电话费', amount: 169.47, note: '（每月25号，信用卡B）', currency: 'CAD', sort_order: 90, is_active: true }
     ];
 
     try {

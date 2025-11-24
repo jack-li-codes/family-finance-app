@@ -105,7 +105,7 @@ UNION ALL SELECT
   '2024-10-10'::date,
   '支出',
   '车辆',
-  'LEXUS加油',
+  '车1加油',
   -60.00,
   'CAD',
   'Gas fill-up',
