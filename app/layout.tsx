@@ -37,34 +37,55 @@ function Nav() {
     <nav
       style={{
         display: "flex",
-        gap: 20,
-        padding: "12px 24px",
-        backgroundColor: "#333",
+        flexWrap: "wrap",         // ✅ 允许整条导航换行（适配手机）
         alignItems: "center",
+        padding: "8px 16px",
+        backgroundColor: "#333",
+        gap: 8,
+        boxSizing: "border-box",
       }}
     >
-      {navItems.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{
-              color: active ? "#fff" : "#ddd",
-              textDecoration: active ? "underline" : "none",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              whiteSpace: "nowrap",
-            }}
-          >
-            <span aria-hidden>{item.icon}</span>
-            <span>{t(item.key, lang)}</span>
-          </Link>
-        );
-      })}
+      {/* 左侧：导航 tab 区域 */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",       // ✅ tab 自己也可以换行
+          gap: 8,
+          flex: "1 1 auto",
+        }}
+      >
+        {navItems.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "4px 8px",
+                borderRadius: 4,
+                whiteSpace: "nowrap",
+                textDecoration: active ? "underline" : "none",
+                color: active ? "#fff" : "#ddd",
+                backgroundColor: active ? "#444" : "transparent",
+              }}
+            >
+              <span aria-hidden>{item.icon}</span>
+              <span>{t(item.key, lang)}</span>
+            </Link>
+          );
+        })}
+      </div>
 
-      <div style={{ marginLeft: "auto" }}>
+      {/* 右侧：语言切换按钮 */}
+      <div
+        style={{
+          marginLeft: "auto",
+          marginTop: 4,           // 手机端换到第二行时，看起来更自然
+        }}
+      >
         <button
           onClick={() => setLang(lang === "zh" ? "en" : "zh")}
           style={{
@@ -88,7 +109,13 @@ function Nav() {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "sans-serif", backgroundColor: "#f8f9fa" }}>
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "sans-serif",
+          backgroundColor: "#f8f9fa",
+        }}
+      >
         <LangProvider>
           <LangSetter />
           <Nav />
