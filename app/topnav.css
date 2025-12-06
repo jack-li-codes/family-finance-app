@@ -1,0 +1,31 @@
+.topnav-wrapper {
+    width: 100%;
+    background: #333;
+    overflow-x: auto;
+  }
+  
+  .topnav-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 10px 12px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  
+  .topnav-item {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: #ddd;
+    text-decoration: none;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .topnav-item.active {
+    background: #fff;
+    color: #000;
+    font-weight: 600;
+  }
+  
