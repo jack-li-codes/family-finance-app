@@ -213,7 +213,7 @@ const base: Record<string, string> = {
     "实际结束": "Actual End",
    // "新建项目": "New Project",
     "所有项目": "All Projects",
-    "当前月固定花销": "Fixed Monthly Expenses",
+    "固定花销-当前月": "Fixed Monthly Expenses",
 
     "活期账户": "Checking Account",
     "信用账户": "Credit Account",
