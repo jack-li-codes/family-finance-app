@@ -1,6 +1,6 @@
 /**
  * Fixed Expenses Configuration
- * Defines demo and real fixed expense data
+ * Defines demo and real fixed expense data (ENGLISH DEMO VERSION)
  */
 
 export type FixedExpense = {
@@ -15,49 +15,50 @@ export type FixedExpense = {
 
 /**
  * Demo fixed expenses for demo1@example.com and demo2@example.com
+ * ✅ Used for DEMO display only (Accounts page yellow card)
  */
 export const demoFixedExpenses: FixedExpense[] = [
   {
     id: 1,
-    name: "房租",
-    amount: 1500.00,
-    note: "Demo 市中心公寓",
+    name: "Rent",
+    amount: 1500.0,
+    note: "Demo downtown apartment",
     icon: "🏠",
     currency: "CAD",
     sort_order: 1,
   },
   {
     id: 2,
-    name: "水电燃气",
-    amount: 120.00,
-    note: "Demo 公用事业费",
+    name: "Utilities",
+    amount: 120.0,
+    note: "Demo utilities bill",
     icon: "💡",
     currency: "CAD",
     sort_order: 2,
   },
   {
     id: 3,
-    name: "网络/手机",
-    amount: 85.00,
-    note: "Demo 通讯费",
+    name: "Internet & Mobile",
+    amount: 85.0,
+    note: "Demo internet & phone",
     icon: "📱",
     currency: "CAD",
     sort_order: 3,
   },
   {
     id: 4,
-    name: "车险",
-    amount: 180.00,
-    note: "Demo 汽车保险",
+    name: "Car Insurance",
+    amount: 180.0,
+    note: "Demo auto insurance",
     icon: "🚗",
     currency: "CAD",
     sort_order: 4,
   },
   {
     id: 5,
-    name: "健身房",
-    amount: 60.00,
-    note: "Demo 会员费",
+    name: "Gym Membership",
+    amount: 60.0,
+    note: "Demo gym fee",
     icon: "💪",
     currency: "CAD",
     sort_order: 5,
@@ -65,41 +66,40 @@ export const demoFixedExpenses: FixedExpense[] = [
 ];
 
 /**
- * Real fixed expenses for actual users
- * Replace these with your real family fixed expenses
+ * Real fixed expenses for actual users (EN version for demo/export/report)
  */
 export const realFixedExpenses: FixedExpense[] = [
   {
     id: 101,
-    name: "房贷",
-    amount: 2200.00,
-    note: "每月按揭",
+    name: "Mortgage",
+    amount: 2200.0,
+    note: "Monthly mortgage payment",
     icon: "🏡",
     currency: "CAD",
     sort_order: 1,
   },
   {
     id: 102,
-    name: "地税",
-    amount: 380.00,
-    note: "Property Tax",
+    name: "Property Tax",
+    amount: 380.0,
+    note: "Municipal property tax",
     icon: "🏛️",
     currency: "CAD",
     sort_order: 2,
   },
   {
     id: 103,
-    name: "水电燃气",
-    amount: 150.00,
-    note: "Utilities",
+    name: "Utilities",
+    amount: 150.0,
+    note: "Electricity, water, gas",
     icon: "💡",
     currency: "CAD",
     sort_order: 3,
   },
   {
     id: 104,
-    name: "网络",
-    amount: 75.00,
+    name: "Internet",
+    amount: 75.0,
     note: "Bell Fibe",
     icon: "🌐",
     currency: "CAD",
@@ -107,27 +107,27 @@ export const realFixedExpenses: FixedExpense[] = [
   },
   {
     id: 105,
-    name: "手机",
-    amount: 120.00,
-    note: "家庭套餐",
+    name: "Mobile Phone",
+    amount: 120.0,
+    note: "Family plan",
     icon: "📱",
     currency: "CAD",
     sort_order: 5,
   },
   {
     id: 106,
-    name: "车险",
-    amount: 280.00,
-    note: "两车保险",
+    name: "Car Insurance",
+    amount: 280.0,
+    note: "Two vehicles insured",
     icon: "🚗",
     currency: "CAD",
     sort_order: 6,
   },
   {
     id: 107,
-    name: "LEXUS贷款",
-    amount: 650.00,
-    note: "车贷",
+    name: "Lexus Car Loan",
+    amount: 650.0,
+    note: "Vehicle financing",
     icon: "🚙",
     currency: "CAD",
     sort_order: 7,

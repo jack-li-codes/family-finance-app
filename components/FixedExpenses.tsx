@@ -5,7 +5,28 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
-import { demoFixedExpenses, realFixedExpenses, type FixedExpense } from "./fixedExpensesConfig";
+import {
+  demoFixedExpenses,
+  realFixedExpenses,
+  type FixedExpense,
+} from "./fixedExpensesConfig";
+
+// ===== Name 显示层中→英映射（只影响界面，不改数据库） =====
+const FIXED_EXPENSE_NAME_EN_MAP: Record<string, string> = {
+  "房租": "Rent",
+  "水电燃气": "Utilities",
+  "网络/手机": "Internet & Mobile",
+  "车险": "Car Insurance",
+  "健身房": "Gym Membership",
+};
+
+const getDisplayName = (name: string, lang: string) => {
+  // 中文界面就直接展示原始中文
+  if (lang === "zh") return name;
+  // 英文界面优先用映射，没有就原样显示
+  return FIXED_EXPENSE_NAME_EN_MAP[name] || name;
+};
+// =========================================================
 
 export default function FixedExpenses() {
   const { lang } = useLang();
@@ -20,7 +41,9 @@ export default function FixedExpenses() {
   const fetchExpenses = async () => {
     try {
       // Get current user email
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user || !user.email) {
         console.error("No user logged in");
@@ -29,7 +52,9 @@ export default function FixedExpenses() {
       }
 
       // Check if user is a demo user
-      const isDemoUser = user.email === "demo1@example.com" || user.email === "demo2@example.com";
+      const isDemoUser =
+        user.email === "demo1@example.com" ||
+        user.email === "demo2@example.com";
 
       if (isDemoUser) {
         // Use demo data for demo users
@@ -87,19 +112,51 @@ export default function FixedExpenses() {
 
   if (loading) {
     return (
-      <div style={{ backgroundColor: "#fffbe6", padding: "16px 24px", border: "1px solid #f0e6c8", borderRadius: 6, fontSize: "14px", flex: 1 }}>
-        <strong style={{ display: "block", marginBottom: "8px" }}>📅 {t("当前月份固定花销", lang)}</strong>
-        <p style={{ color: "#888", fontSize: "13px" }}>{lang === "zh" ? "加载中..." : "Loading..."}</p>
+      <div
+        style={{
+          backgroundColor: "#fffbe6",
+          padding: "16px 24px",
+          border: "1px solid #f0e6c8",
+          borderRadius: 6,
+          fontSize: "14px",
+          flex: 1,
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          📅 {t("当前月份固定花销", lang)}
+        </strong>
+        <p style={{ color: "#888", fontSize: "13px" }}>
+          {lang === "zh" ? "加载中..." : "Loading..."}
+        </p>
       </div>
     );
   }
 
   if (expenses.length === 0) {
     return (
-      <div style={{ backgroundColor: "#fffbe6", padding: "16px 24px", border: "1px solid #f0e6c8", borderRadius: 6, fontSize: "14px", flex: 1 }}>
-        <strong style={{ display: "block", marginBottom: "8px" }}>📅 {t("当前月份固定花销", lang)}</strong>
-        <p style={{ color: "#666", fontSize: "13px", margin: "8px 0" }}>
-          {lang === "zh" ? "暂无固定花销项目。" : "No fixed expenses configured."}
+      <div
+        style={{
+          backgroundColor: "#fffbe6",
+          padding: "16px 24px",
+          border: "1px solid #f0e6c8",
+          borderRadius: 6,
+          fontSize: "14px",
+          flex: 1,
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          📅 {t("当前月份固定花销", lang)}
+        </strong>
+        <p
+          style={{
+            color: "#666",
+            fontSize: "13px",
+            margin: "8px 0",
+          }}
+        >
+          {lang === "zh"
+            ? "暂无固定花销项目。"
+            : "No fixed expenses configured."}
         </p>
         <button
           onClick={() => router.push("/fixed-expenses")}
@@ -122,9 +179,27 @@ export default function FixedExpenses() {
   const totals = getTotalsByCurrency();
 
   return (
-    <div style={{ backgroundColor: "#fffbe6", padding: "16px 24px", border: "1px solid #f0e6c8", borderRadius: 6, fontSize: "14px", flex: 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <strong style={{ fontSize: "15px" }}>📅 {t("当前月份固定花销", lang)}</strong>
+    <div
+      style={{
+        backgroundColor: "#fffbe6",
+        padding: "16px 24px",
+        border: "1px solid #f0e6c8",
+        borderRadius: 6,
+        fontSize: "14px",
+        flex: 1,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "12px",
+        }}
+      >
+        <strong style={{ fontSize: "15px" }}>
+          📅 {t("当前月份固定花销", lang)}
+        </strong>
         <button
           onClick={() => router.push("/fixed-expenses")}
           style={{
@@ -142,19 +217,46 @@ export default function FixedExpenses() {
 
       <div style={{ marginBottom: "12px" }}>
         {expenses.map((exp) => (
-          <div key={exp.id} style={{ marginBottom: "6px", fontSize: "13px", lineHeight: "1.4" }}>
-            {exp.icon && <span style={{ marginRight: "6px" }}>{exp.icon}</span>}
-            <span style={{ fontWeight: 500 }}>{exp.name}</span>:{" "}
-            <span style={{ color: "#d32f2f" }}>{exp.amount.toFixed(2)}</span>
-            {exp.note && <span style={{ color: "#666", marginLeft: "4px" }}>{exp.note}</span>}
+          <div
+            key={exp.id}
+            style={{
+              marginBottom: "6px",
+              fontSize: "13px",
+              lineHeight: "1.4",
+            }}
+          >
+            {exp.icon && (
+              <span style={{ marginRight: "6px" }}>{exp.icon}</span>
+            )}
+            {/* ⭐ 这里用映射后的名字 */}
+            <span style={{ fontWeight: 500 }}>
+              {getDisplayName(exp.name, lang)}
+            </span>
+            :{" "}
+            <span style={{ color: "#d32f2f" }}>
+              {exp.amount.toFixed(2)}
+            </span>
+            {exp.note && (
+              <span style={{ color: "#666", marginLeft: "4px" }}>
+                {exp.note}
+              </span>
+            )}
           </div>
         ))}
       </div>
 
-      <div style={{ borderTop: "1px solid #e0d6b8", paddingTop: "10px", fontWeight: "bold", fontSize: "13px" }}>
+      <div
+        style={{
+          borderTop: "1px solid #e0d6b8",
+          paddingTop: "10px",
+          fontWeight: "bold",
+          fontSize: "13px",
+        }}
+      >
         {Object.entries(totals).map(([currency, total]) => (
           <div key={currency}>
-            {lang === "zh" ? "合计" : "Total"}: {formatAmount(total, currency)}
+            {lang === "zh" ? "合计" : "Total"}:{" "}
+            {formatAmount(total, currency)}
           </div>
         ))}
       </div>

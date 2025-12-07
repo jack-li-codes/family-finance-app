@@ -311,17 +311,91 @@ export default function FixedExpensesPage() {
     console.info("📖 Documentation: See docs/fixed_expenses_setup.md");
 
     // Template data - EXACT format as requested
+    // Template data - English version for demo & reporting
     const payload = [
-      { icon: '🏠', name: '房贷', amount: 4482.28, note: '（每月28号）', currency: 'CAD', sort_order: 10, is_active: true },
-      { icon: '🚗', name: '汽车保险', amount: 497.13, note: '（每月23号）', currency: 'CAD', sort_order: 20, is_active: true },
-      { icon: '🏡', name: '房屋保险', amount: 208.02, note: '（每月23号）', currency: 'CAD', sort_order: 30, is_active: true },
-      { icon: '🚘', name: '车 lease', amount: 817.22, note: '（每月10号）', currency: 'CAD', sort_order: 40, is_active: true },
-      { icon: '📅', name: '地税', amount: 1560, note: '（4月1次，6月25号）', currency: 'CAD', sort_order: 50, is_active: true },
-      { icon: '💡', name: '水电', amount: 130, note: '（每月20号）≈', currency: 'CAD', sort_order: 60, is_active: true },
-      { icon: '🔥', name: '煤气', amount: 130, note: '（每月20号）≈', currency: 'CAD', sort_order: 70, is_active: true },
-      { icon: '🌐', name: '宽带', amount: 74, note: '（每月5号，信用卡A）', currency: 'CAD', sort_order: 80, is_active: true },
-      { icon: '📱', name: '电话费', amount: 169.47, note: '（每月25号，信用卡B）', currency: 'CAD', sort_order: 90, is_active: true }
+      {
+        icon: "🏠",
+        name: "Mortgage",
+        amount: 4482.28,
+        note: "(Paid on 28th of each month)",
+        currency: "CAD",
+        sort_order: 10,
+        is_active: true,
+      },
+      {
+        icon: "🚗",
+        name: "Car Insurance",
+        amount: 497.13,
+        note: "(Paid on 23rd of each month)",
+        currency: "CAD",
+        sort_order: 20,
+        is_active: true,
+      },
+      {
+        icon: "🏡",
+        name: "Home Insurance",
+        amount: 208.02,
+        note: "(Paid on 23rd of each month)",
+        currency: "CAD",
+        sort_order: 30,
+        is_active: true,
+      },
+      {
+        icon: "🚘",
+        name: "Car Lease",
+        amount: 817.22,
+        note: "(Paid on 10th of each month)",
+        currency: "CAD",
+        sort_order: 40,
+        is_active: true,
+      },
+      {
+        icon: "📅",
+        name: "Property Tax",
+        amount: 1560,
+        note: "(Once in April, once on June 25th)",
+        currency: "CAD",
+        sort_order: 50,
+        is_active: true,
+      },
+      {
+        icon: "💡",
+        name: "Electricity",
+        amount: 130,
+        note: "(Around the 20th each month, estimate)",
+        currency: "CAD",
+        sort_order: 60,
+        is_active: true,
+      },
+      {
+        icon: "🔥",
+        name: "Gas",
+        amount: 130,
+        note: "(Around the 20th each month, estimate)",
+        currency: "CAD",
+        sort_order: 70,
+        is_active: true,
+      },
+      {
+        icon: "🌐",
+        name: "Internet",
+        amount: 74,
+        note: "(5th of each month, Credit Card A)",
+        currency: "CAD",
+        sort_order: 80,
+        is_active: true,
+      },
+      {
+        icon: "📱",
+        name: "Mobile Phone",
+        amount: 169.47,
+        note: "(25th of each month, Credit Card B)",
+        currency: "CAD",
+        sort_order: 90,
+        is_active: true,
+      },
     ];
+
 
     try {
       // Upsert based on name
