@@ -119,6 +119,18 @@ const base: Record<string, string> = {
    "保存失败：": "Save failed: ",
    "用户信息获取失败，请重新登录": "User info missing. Please sign in again.",
 
+  
+// ===== Auth / Login Page =====
+    "登录失败，请检查邮箱和密码": "Login failed. Please check your email and password.",
+    "发送失败，请确认邮箱正确": "Failed to send email. Please make sure the address is correct.",
+    "已发送重设密码邮件，请检查邮箱": "Password reset email has been sent. Please check your inbox.",
+    "登录账户": "Sign in to your account",
+    "邮箱": "Email",
+    "密码": "Password",
+    "忘记密码？点我发送重置链接": "Forgot your password? Click here to send a reset link",
+    "登录": "Sign in",
+
+
    // ===== Accounts Page: Summary Section (Positive/Negative Labels) =====
    "家庭账户管理": "Account Management",
    "家庭账户总余额": "Total Family Balance",
