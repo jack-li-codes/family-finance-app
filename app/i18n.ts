@@ -160,6 +160,7 @@ const base: Record<string, string> = {
    "工作餐B": "Work Meal B",
    "饮品/甜品": "Drinks/Dessert",
    "其他": "Other",
+   "其他费用": "Other Expenses",
  
    "车辆": "Vehicle",
    "车1贷款": "Car 1 Loan",
