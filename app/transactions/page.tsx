@@ -91,7 +91,7 @@ export default function TransactionsPage() {
       const account = accounts.find((a) => a.id === t0.account_id);
       return {
         [t("日期", lang)]: t0.date,
-        [t("类型", lang)]: t0.type,
+        [t("类型", lang)]: t(t0.type, lang),
         [t("分类", lang)]: t(t0.category || "", lang),
         [t("二级分类", lang)]: t(t0.subcategory || "", lang),
         [t("金额", lang)]: t0.amount,
@@ -305,7 +305,7 @@ export default function TransactionsPage() {
             return (
               <tr key={t0.id}>
                 <td style={cellStyle}>{t0.date}</td>
-                <td style={cellStyle}>{t0.type}</td>
+                <td style={cellStyle}>{t(t0.type, lang)}</td>
                 <td style={cellStyle}>{t(t0.category || "", lang)}</td>
                 <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
                 <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
