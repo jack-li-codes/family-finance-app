@@ -8,10 +8,12 @@ export default function HomePage() {
   const { lang } = useLang();
   return (
     <div>
-      <h1>{t("🏠 欢迎使用家庭财务App", lang)}</h1>
+      <h1>🏠 {t("欢迎使用家庭财务App", lang)}</h1>
       <p style={{ marginTop: 12 }}>
-        {t("请通过上方导航栏访问各个功能模块：账户余额、收支记录、工程记录、收支汇总。", lang)}
-      </p>
+         {lang === "zh"
+         ? "使用顶部导航管理账户、收支、工程记录与财务汇总。"
+         : "Use the top navigation to manage accounts, transactions, worklog, and summary."}
+        </p>
     </div>
   );
 }

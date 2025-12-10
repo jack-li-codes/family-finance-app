@@ -16,7 +16,7 @@ const base: Record<string, string> = {
    "账户余额": "Balance",
    "账户余额快照": "Balance Snapshot",
    "项目管理": "Projects",
-   "欢迎使用家庭财务App": "Welcome to the Family Finance App",
+   "欢迎使用家庭财务App": "Welcome to the Family Finance",
    "请通过上方导航栏访问各个功能模块：账户余额、收支记录、工程记录、收支汇总。":
      "Use the top navigation to access: Balance, Transactions, Worklog, and Summary.",
    "新增": "Add",
