@@ -67,6 +67,7 @@ export default function FixedExpenses() {
       const { data, error } = await supabase
         .from("fixed_expenses")
         .select("*")
+        .eq("user_id", user.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true })
         .order("id", { ascending: true });

@@ -63,9 +63,11 @@ export default function FixedExpensesPage() {
 
       // Real user: Query from database
       setIsDemoUser(false);
+      if (!user?.id) return;
       const { data, error } = await supabase
         .from("fixed_expenses")
         .select("*")
+        .eq("user_id", user.id)
         .order("sort_order", { ascending: true })
         .order("id", { ascending: true });
 
@@ -167,10 +169,17 @@ export default function FixedExpensesPage() {
     }
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        showToast(lang === "zh" ? "用户未登录" : "User not logged in");
+        return;
+      }
+
       // Perform insert or update
       const { data, error } = editingId
-        ? await supabase.from("fixed_expenses").update(payload).eq("id", editingId)
-        : await supabase.from("fixed_expenses").insert(payload);
+        ? await supabase.from("fixed_expenses").update(payload).eq("id", editingId).eq("user_id", user.id)
+        : await supabase.from("fixed_expenses").insert({ ...payload, user_id: user.id });
 
       if (error) {
         console.error("[Save Error] Full error object:", error);
@@ -222,11 +231,19 @@ export default function FixedExpensesPage() {
       return;
     }
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast(lang === "zh" ? "用户未登录" : "User not logged in");
+      return;
+    }
+
     // Soft delete by default
     const { error } = await supabase
       .from("fixed_expenses")
       .update({ is_active: false })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Delete error:", error);
@@ -249,7 +266,14 @@ export default function FixedExpensesPage() {
       return;
     }
 
-    const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast(lang === "zh" ? "用户未登录" : "User not logged in");
+      return;
+    }
+
+    const { error } = await supabase.from("fixed_expenses").delete().eq("id", id).eq("user_id", user.id);
 
     if (error) {
       console.error("Hard delete error:", error);
@@ -270,10 +294,18 @@ export default function FixedExpensesPage() {
       return;
     }
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast(lang === "zh" ? "用户未登录" : "User not logged in");
+      return;
+    }
+
     const { error } = await supabase
       .from("fixed_expenses")
       .update({ is_active: true })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Restore error:", error);
@@ -307,13 +339,21 @@ export default function FixedExpensesPage() {
     }
 
     console.info("📥 Import Template: Starting upsert operation...");
-    console.info("ℹ️  Requirements: Unique index on 'name' column and RLS policies must be configured.");
+    console.info("ℹ️  Requirements: Unique index on 'user_id,name' columns and RLS policies must be configured.");
     console.info("📖 Documentation: See docs/fixed_expenses_setup.md");
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      showToast(lang === "zh" ? "用户未登录" : "User not logged in");
+      return;
+    }
 
     // Template data - EXACT format as requested
     // Template data - English version for demo & reporting
     const payload = [
       {
+        user_id: user.id,
         icon: "🏠",
         name: "Mortgage",
         amount: 4482.28,
@@ -323,6 +363,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "🚗",
         name: "Car Insurance",
         amount: 497.13,
@@ -332,6 +373,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "🏡",
         name: "Home Insurance",
         amount: 208.02,
@@ -341,6 +383,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "🚘",
         name: "Car Lease",
         amount: 817.22,
@@ -350,6 +393,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "📅",
         name: "Property Tax",
         amount: 1560,
@@ -359,6 +403,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "💡",
         name: "Electricity",
         amount: 130,
@@ -368,6 +413,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "🔥",
         name: "Gas",
         amount: 130,
@@ -377,6 +423,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "🌐",
         name: "Internet",
         amount: 74,
@@ -386,6 +433,7 @@ export default function FixedExpensesPage() {
         is_active: true,
       },
       {
+        user_id: user.id,
         icon: "📱",
         name: "Mobile Phone",
         amount: 169.47,
@@ -398,11 +446,11 @@ export default function FixedExpensesPage() {
 
 
     try {
-      // Upsert based on name
+      // Upsert based on user_id,name
       const { error } = await supabase
         .from("fixed_expenses")
         .upsert(payload, {
-          onConflict: 'name',
+          onConflict: 'user_id,name',
           ignoreDuplicates: false
         });
 

@@ -3,10 +3,11 @@
 
 import "./globals.css";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LangProvider, useLang } from "./i18n-context";
 import { t } from "./i18n";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 /** Sync <html lang> to ensure browser controls (e.g., date picker) display in correct language */
 function LangSetter() {
@@ -20,7 +21,25 @@ function LangSetter() {
 /** Top navigation */
 function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang, setLang } = useLang();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserEmail(user?.email || null);
+    };
+    getUser();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  // Extract email prefix (before @)
+  const displayName = userEmail ? userEmail.split('@')[0] : null;
 
   const navItems = [
     { icon: "💳", key: "账户管理", href: "/accounts" },
@@ -79,13 +98,45 @@ function Nav() {
         })}
       </div>
 
-      {/* 右侧：语言切换按钮 */}
+      {/* 右侧：用户信息、退出登录、语言切换按钮 */}
       <div
         style={{
           marginLeft: "auto",
           marginTop: 4,           // 手机端换到第二行时，看起来更自然
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
         }}
       >
+        {displayName && (
+          <span
+            style={{
+              color: "#ddd",
+              fontSize: "13px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {displayName}
+          </span>
+        )}
+        {userEmail && (
+          <button
+            onClick={handleLogout}
+            style={{
+              color: "#fff",
+              background: "#dc3545",
+              borderRadius: 4,
+              padding: "4px 10px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "12px",
+              whiteSpace: "nowrap",
+            }}
+            title={lang === "zh" ? "退出登录" : "Logout"}
+          >
+            {lang === "zh" ? "退出" : "Logout"}
+          </button>
+        )}
         <button
           onClick={() => setLang(lang === "zh" ? "en" : "zh")}
           style={{
