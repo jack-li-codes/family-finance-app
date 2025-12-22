@@ -33,9 +33,26 @@ export default function FixedExpenses() {
   const router = useRouter();
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchExpenses();
+  }, []);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+    };
+
+    // Initial check
+    handleChange(mediaQuery);
+
+    // Listen for changes
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const fetchExpenses = async () => {
@@ -109,6 +126,18 @@ export default function FixedExpenses() {
       totals[exp.currency] += exp.amount;
     });
     return totals;
+  };
+
+  const toggleExpand = (id: number) => {
+    setExpandedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -217,33 +246,169 @@ export default function FixedExpenses() {
       </div>
 
       <div style={{ marginBottom: "12px" }}>
-        {expenses.map((exp) => (
-          <div
-            key={exp.id}
-            style={{
-              marginBottom: "6px",
-              fontSize: "13px",
-              lineHeight: "1.4",
-            }}
-          >
-            {exp.icon && (
-              <span style={{ marginRight: "6px" }}>{exp.icon}</span>
-            )}
-            {/* ⭐ 这里用映射后的名字 */}
-            <span style={{ fontWeight: 500 }}>
-              {getDisplayName(exp.name, lang)}
-            </span>
-            :{" "}
-            <span style={{ color: "#d32f2f" }}>
-              {exp.amount.toFixed(2)}
-            </span>
-            {exp.note && (
-              <span style={{ color: "#666", marginLeft: "4px" }}>
-                {exp.note}
-              </span>
-            )}
-          </div>
-        ))}
+        {expenses.map((exp) => {
+          const isExpanded = expandedIds.has(exp.id);
+          const showCollapsed = isMobile && !isExpanded;
+
+          return (
+            <div
+              key={exp.id}
+              style={{
+                marginBottom: isMobile ? "8px" : "6px",
+                fontSize: "13px",
+                lineHeight: "1.4",
+                padding: isMobile ? "8px" : "0",
+                backgroundColor: isMobile ? "#fff8e1" : "transparent",
+                borderRadius: isMobile ? "4px" : "0",
+                border: isMobile ? "1px solid #f0e6c8" : "none",
+              }}
+            >
+              {/* Mobile: Collapsed view */}
+              {showCollapsed && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    {exp.icon && <span>{exp.icon}</span>}
+                    <span
+                      style={{
+                        fontWeight: 500,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {getDisplayName(exp.name, lang)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "#d32f2f",
+                        fontWeight: 500,
+                        fontSize: "12px",
+                      }}
+                    >
+                      {formatAmount(exp.amount, exp.currency)} / {lang === "zh" ? "月" : "month"}
+                    </span>
+                    <button
+                      onClick={() => toggleExpand(exp.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "2px",
+                        fontSize: "16px",
+                        lineHeight: 1,
+                      }}
+                      aria-label="expand"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Desktop or Mobile Expanded view */}
+              {!showCollapsed && (
+                <div>
+                  {isMobile && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "8px",
+                        paddingBottom: "8px",
+                        borderBottom: "1px solid #f0e6c8",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        {exp.icon && <span>{exp.icon}</span>}
+                        <span style={{ fontWeight: 600 }}>
+                          {getDisplayName(exp.name, lang)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => toggleExpand(exp.id)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: "2px",
+                          fontSize: "16px",
+                          lineHeight: 1,
+                        }}
+                        aria-label="collapse"
+                      >
+                        ▲
+                      </button>
+                    </div>
+                  )}
+
+                  {!isMobile && (
+                    <div>
+                      {exp.icon && (
+                        <span style={{ marginRight: "6px" }}>{exp.icon}</span>
+                      )}
+                      <span style={{ fontWeight: 500 }}>
+                        {getDisplayName(exp.name, lang)}
+                      </span>
+                      :{" "}
+                      <span style={{ color: "#d32f2f" }}>
+                        {exp.amount.toFixed(2)}
+                      </span>
+                      {exp.note && (
+                        <span style={{ color: "#666", marginLeft: "4px" }}>
+                          {exp.note}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {isMobile && (
+                    <div style={{ fontSize: "12px", color: "#555", lineHeight: "1.6" }}>
+                      <div style={{ marginBottom: "4px" }}>
+                        <strong>{lang === "zh" ? "金额" : "Amount"}:</strong>{" "}
+                        <span style={{ color: "#d32f2f", fontWeight: 600 }}>
+                          {formatAmount(exp.amount, exp.currency)} / {lang === "zh" ? "月" : "month"}
+                        </span>
+                      </div>
+                      {exp.note && (
+                        <div style={{ marginBottom: "4px" }}>
+                          <strong>{lang === "zh" ? "备注" : "Note"}:</strong> {exp.note}
+                        </div>
+                      )}
+                      <div>
+                        <strong>{lang === "zh" ? "币种" : "Currency"}:</strong> {exp.currency}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div
