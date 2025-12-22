@@ -333,10 +333,189 @@ export default function WorklogPage() {
 
   return (
     <AuthGuard>
-      <div style={{ padding: 20, fontFamily: "sans-serif", maxWidth: 1200, marginLeft: 0, marginRight: "auto" }}>
+      <style jsx>{`
+        .worklog-container {
+          padding: 20px;
+          font-family: sans-serif;
+          max-width: 1200px;
+          margin-left: 0;
+          margin-right: auto;
+        }
+
+        .form-grid {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .form-field {
+          flex: 1;
+          min-width: 110px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .form-field label {
+          font-size: 0.75rem;
+          color: #666;
+          margin-bottom: 2px;
+          display: none;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .form-field-note {
+          flex: 100%;
+        }
+
+        .form-field-button {
+          flex: 100%;
+          min-width: auto;
+        }
+
+        .stats-summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .stats-grid-2col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+
+        .table-container {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .worklog-table {
+          width: 100%;
+          border-collapse: collapse;
+          border: 1px solid #ccc;
+          min-width: 800px;
+        }
+
+        .worklog-table th,
+        .worklog-table td {
+          border: 1px solid #ccc;
+          padding: 10px 16px;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .action-buttons button {
+          padding: 4px 8px;
+        }
+
+        @media (max-width: 640px) {
+          .worklog-container {
+            padding: 12px;
+          }
+
+          .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .form-field {
+            flex: 1 1 140px;
+            min-width: 120px;
+          }
+
+          .form-field label {
+            display: block;
+          }
+
+          /* 第一行：日期 + 项目 + 地点 */
+          .form-field-date {
+            flex: 1 1 140px;
+            min-width: 120px;
+          }
+
+          .form-field-project {
+            flex: 1 1 140px;
+            min-width: 120px;
+          }
+
+          .form-field-location {
+            flex: 1 1 140px;
+            min-width: 120px;
+          }
+
+          /* 第二行：出发 + 回家 + 实际工时 + Holiday */
+          .form-field-time {
+            flex: 1 1 110px;
+            min-width: 110px;
+          }
+
+          .form-field-actual-hours {
+            flex: 1 1 100px;
+            min-width: 100px;
+          }
+
+          .form-field-holiday {
+            flex: 0 0 80px;
+            min-width: 80px;
+          }
+
+          /* 备注和保存按钮独占一行 */
+          .form-field-note {
+            flex: 100%;
+            width: 100%;
+          }
+
+          .form-field-button {
+            flex: 100%;
+            width: 100%;
+          }
+
+          .form-field-button button {
+            min-width: 80px;
+          }
+
+          .stats-summary {
+            font-size: 0.9rem;
+          }
+
+          .stats-grid-2col {
+            grid-template-columns: 1fr;
+          }
+
+          .worklog-table th,
+          .worklog-table td {
+            padding: 6px 8px;
+            font-size: 0.85rem;
+          }
+
+          .worklog-table .col-location,
+          .worklog-table .col-note {
+            display: none;
+          }
+
+          .action-buttons button {
+            padding: 3px 6px;
+            font-size: 0.8rem;
+          }
+        }
+      `}</style>
+      <div className="worklog-container">
         <h2>🛠 {t("工程时间记录", lang)}</h2>
 
-        <div style={{ marginBottom: 12, display: "flex", gap: 12 }}>
+        <div style={{ marginBottom: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button
             onClick={() => { resetForm(); setShowForm(true); }}
             style={{ backgroundColor: "green", color: "white", padding: "8px 16px" }}
@@ -352,51 +531,71 @@ export default function WorklogPage() {
         </div>
 
         {showForm && (
-          <div style={{ marginBottom: 24, backgroundColor: "#f9f9f9", padding: 16, border: "1px solid #ccc" }}>
-            <table>
-              <tbody>
-                <tr>
-                  <td><input type="date" name="date" value={formData.date} onChange={handleChange} /></td>
-                  <td><input type="time" name="start_time" value={formData.start_time ?? ""} onChange={handleChange} /></td>
-                  <td><input type="time" name="end_time" value={formData.end_time ?? ""} onChange={handleChange} /></td>
-                  <td>
-                    <select name="project_id" value={formData.project_id ?? ""} onChange={handleChange}>
-                      <option value="">{t("请选择项目", lang)}</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td><input placeholder={t("地点", lang)} name="location" value={formData.location ?? ""} onChange={handleChange} /></td>
-                  <td><textarea placeholder={t("备注（施工内容）", lang)} name="note" value={formData.note ?? ""} onChange={handleChange} /></td>
-                  <td>
-                    <input
-                      type="number"
-                      step="0.01"
-                      name="actual_hours"
-                      placeholder={t("实际工时", lang)}
-                      value={formData.actual_hours ?? ""}
-                      onChange={handleChange}
-                      style={{ width: 100 }}
-                    />
-                  </td>
-                  <td>
-                    <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <input type="checkbox" name="is_holiday" checked={formData.is_holiday || false} onChange={handleChange} />
-                      Holiday
-                    </label>
-                  </td>
-                  <td>
-                    <button
-                      onClick={handleSubmit}
-                      style={{ backgroundColor: "green", color: "white", padding: "6px 12px" }}
-                    >
-                      {t("保存", lang)}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div style={{ marginBottom: 24, backgroundColor: "#f9f9f9", padding: 16, border: "1px solid #ccc", borderRadius: 4 }}>
+            <div className="form-grid">
+              {/* 第一行：日期 + 项目 + 地点 */}
+              <div className="form-field form-field-date">
+                <label>{t("日期", lang)}</label>
+                <input type="date" name="date" value={formData.date} onChange={handleChange} />
+              </div>
+              <div className="form-field form-field-project">
+                <label>{t("项目", lang)}</label>
+                <select name="project_id" value={formData.project_id ?? ""} onChange={handleChange}>
+                  <option value="">{t("请选择项目", lang)}</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-field form-field-location">
+                <label>{t("地点", lang)}</label>
+                <input placeholder={t("地点", lang)} name="location" value={formData.location ?? ""} onChange={handleChange} />
+              </div>
+
+              {/* 第二行：出发 + 回家 + 实际工时 + Holiday */}
+              <div className="form-field form-field-time">
+                <label>出发</label>
+                <input type="time" name="start_time" value={formData.start_time ?? ""} onChange={handleChange} style={{ minWidth: 110 }} />
+              </div>
+              <div className="form-field form-field-time">
+                <label>回家</label>
+                <input type="time" name="end_time" value={formData.end_time ?? ""} onChange={handleChange} style={{ minWidth: 110 }} />
+              </div>
+              <div className="form-field form-field-actual-hours">
+                <label>实际工时</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="actual_hours"
+                  placeholder="实际工时"
+                  value={formData.actual_hours ?? ""}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-field form-field-holiday">
+                <label>Holiday</label>
+                <label style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                  <input type="checkbox" name="is_holiday" checked={formData.is_holiday || false} onChange={handleChange} />
+                  Holiday
+                </label>
+              </div>
+
+              {/* 备注独占一行 */}
+              <div className="form-field form-field-note">
+                <label>{t("备注（施工内容）", lang)}</label>
+                <textarea placeholder={t("备注（施工内容）", lang)} name="note" value={formData.note ?? ""} onChange={handleChange} rows={2} />
+              </div>
+
+              {/* 保存按钮独占一行 */}
+              <div className="form-field form-field-button">
+                <button
+                  onClick={handleSubmit}
+                  style={{ backgroundColor: "green", color: "white", padding: "8px 16px", width: "100%" }}
+                >
+                  {t("保存", lang)}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -408,11 +607,9 @@ export default function WorklogPage() {
             style={{
               padding: 16,
               cursor: "pointer",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
               userSelect: "none"
             }}
+            className="stats-summary"
           >
             <div style={{ fontWeight: "bold", fontSize: "1.1em" }}>
               📊 统计 {statsOpen ? "▾" : "▸"}
@@ -426,7 +623,7 @@ export default function WorklogPage() {
           {statsOpen && (
             <div style={{ padding: "0 16px 16px 16px" }}>
               {/* Holiday过滤选项 */}
-              <div style={{ marginBottom: 16, display: "flex", gap: 16 }}>
+              <div style={{ marginBottom: 16, display: "flex", gap: 16, flexWrap: "wrap" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
                   <input
                     type="checkbox"
@@ -452,7 +649,7 @@ export default function WorklogPage() {
               </div>
 
               {/* 本周和本月统计 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <div className="stats-grid-2col" style={{ marginBottom: 16 }}>
                 <div style={{ backgroundColor: "white", padding: 12, border: "1px solid #ddd", borderRadius: 4 }}>
                   <div style={{ fontWeight: "bold", marginBottom: 8 }}>本周</div>
                   <div>合计工时: <strong>{statistics.thisWeekHours}</strong> 小时</div>
@@ -466,7 +663,7 @@ export default function WorklogPage() {
               </div>
 
               {/* 最近8周和最近12个月统计 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="stats-grid-2col">
                 {/* 最近8周 */}
                 <div>
                   <div style={{ fontWeight: "bold", marginBottom: 8 }}>最近 8 周</div>
@@ -522,54 +719,64 @@ export default function WorklogPage() {
         </div>
 
         <h4>📋 {t("已记录项目", lang)}</h4>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
-          <thead>
-            <tr>
-              {[t("日期", lang), t("星期", lang), t("出发时间", lang), t("回家时间", lang), t("总工时", lang), t("实际工时", lang), t("项目", lang), t("地点", lang), t("备注", lang), "Holiday", t("操作", lang)].map((h) => (
-                <th key={h} style={{ border: "1px solid #ccc", padding: "10px 16px", backgroundColor: "#f0f0f0", textAlign: "left" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {worklogs.length === 0 && (
+        <div className="table-container">
+          <table className="worklog-table">
+            <thead>
               <tr>
-                <td colSpan={11} style={{ textAlign: "center", padding: 20 }}>
-                  ⚠️ {t("暂无记录，请先新增", lang)}
-                </td>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("日期", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("星期", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("出发时间", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("回家时间", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("总工时", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("实际工时", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("项目", lang)}</th>
+                <th className="col-location" style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("地点", lang)}</th>
+                <th className="col-note" style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("备注", lang)}</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>Holiday</th>
+                <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("操作", lang)}</th>
               </tr>
-            )}
-            {worklogs.map((log) => (
-              <tr key={log.id} style={{ backgroundColor: log.is_holiday ? "#fff3cd" : "transparent" }}>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.date || t("无日期", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{getWeekday(log.date)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.start_time || t("无时间", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.end_time || t("无时间", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.hours ?? 0}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.actual_hours ?? log.hours ?? 0}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.project_name || t("无项目", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.location || t("无地点", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.note || t("无备注", lang)}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>{log.is_holiday ? "✓" : ""}</td>
-                <td style={{ border: "1px solid #ccc", padding: "10px 16px" }}>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={() => handleEdit(log)}
-                      style={{ backgroundColor: "#ffc107", padding: "4px 8px" }}
-                    >
-                      {t("编辑", lang)}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(log.id!)}
-                      style={{ backgroundColor: "red", color: "white", padding: "4px 8px" }}
-                    >
-                      {t("删除", lang)}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {worklogs.length === 0 && (
+                <tr>
+                  <td colSpan={11} style={{ textAlign: "center", padding: 20 }}>
+                    ⚠️ {t("暂无记录，请先新增", lang)}
+                  </td>
+                </tr>
+              )}
+              {worklogs.map((log) => (
+                <tr key={log.id} style={{ backgroundColor: log.is_holiday ? "#fff3cd" : "transparent" }}>
+                  <td>{log.date || t("无日期", lang)}</td>
+                  <td>{getWeekday(log.date)}</td>
+                  <td>{log.start_time || t("无时间", lang)}</td>
+                  <td>{log.end_time || t("无时间", lang)}</td>
+                  <td>{log.hours ?? 0}</td>
+                  <td>{log.actual_hours ?? log.hours ?? 0}</td>
+                  <td>{log.project_name || t("无项目", lang)}</td>
+                  <td className="col-location">{log.location || t("无地点", lang)}</td>
+                  <td className="col-note">{log.note || t("无备注", lang)}</td>
+                  <td>{log.is_holiday ? "✓" : ""}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button
+                        onClick={() => handleEdit(log)}
+                        style={{ backgroundColor: "#ffc107" }}
+                      >
+                        {t("编辑", lang)}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(log.id!)}
+                        style={{ backgroundColor: "red", color: "white" }}
+                      >
+                        {t("删除", lang)}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </AuthGuard>
   );
