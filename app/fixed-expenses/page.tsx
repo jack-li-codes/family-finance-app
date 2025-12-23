@@ -892,9 +892,13 @@ function MobileFixedExpenseForm({
   isEditing: boolean;
   lang: string;
 }) {
+  const [expandedNote, setExpandedNote] = useState(false);
+
   const handleInputChange = (field: keyof FixedExpense, inputValue: string | boolean) => {
     onChange({ ...value, [field]: inputValue });
   };
+
+  const hasNote = value.note && value.note.trim() !== "";
 
   return (
     <>
@@ -916,7 +920,7 @@ function MobileFixedExpenseForm({
               type="checkbox"
               checked={!!value.is_active}
               onChange={(e) => handleInputChange("is_active", e.target.checked)}
-              style={{ width: "20px", height: "20px" }}
+              className="checkbox-input"
             />
           </div>
 
@@ -969,13 +973,34 @@ function MobileFixedExpenseForm({
           </div>
 
           <div className="fe-field fe-span2">
-            <label>{lang === "zh" ? "备注" : "Note"}</label>
-            <textarea
-              rows={3}
-              value={value.note ?? ""}
-              onChange={(e) => handleInputChange("note", e.target.value)}
-              placeholder={lang === "zh" ? "可写长备注，完整显示" : "Write notes, fully displayed"}
-            />
+            <div
+              className="note-toggle"
+              onClick={() => setExpandedNote(!expandedNote)}
+            >
+              <span className="note-label">
+                {lang === "zh" ? "备注" : "Note"}
+                {!expandedNote && (
+                  <span className="note-hint">
+                    {hasNote
+                      ? ` • ${lang === "zh" ? "点击展开" : "Click to expand"}`
+                      : ` • ${lang === "zh" ? "无" : "None"}`
+                    }
+                  </span>
+                )}
+              </span>
+              <span className="toggle-icon">{expandedNote ? "▲" : "▼"}</span>
+            </div>
+
+            {expandedNote && (
+              <textarea
+                rows={3}
+                value={value.note ?? ""}
+                onChange={(e) => handleInputChange("note", e.target.value)}
+                placeholder={lang === "zh" ? "填写备注..." : "Add note..."}
+                className="note-textarea"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
           </div>
         </div>
 
@@ -993,39 +1018,108 @@ function MobileFixedExpenseForm({
         .fe-card {
           border: 1px solid #ddd;
           border-radius: 12px;
-          padding: 12px;
+          padding: 14px;
           background: #fff;
           margin: 12px 0;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
 
         .fe-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          gap: 12px;
         }
 
         .fe-field label {
           display: block;
-          font-size: 12px;
-          opacity: 0.8;
-          margin-bottom: 4px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #444;
+          margin-bottom: 6px;
         }
 
-        .fe-field input,
-        .fe-field select,
-        .fe-field textarea {
+        .fe-field input:not(.checkbox-input),
+        .fe-field select {
           width: 100%;
           padding: 10px;
-          border: 1px solid #ccc;
+          border: 1px solid #ddd;
           border-radius: 10px;
           font-size: 14px;
           box-sizing: border-box;
+          transition: border-color 0.2s;
         }
 
-        .fe-field textarea {
+        .fe-field input:focus,
+        .fe-field select:focus {
+          outline: none;
+          border-color: #1677ff;
+        }
+
+        .checkbox-input {
+          width: 22px;
+          height: 22px;
+          cursor: pointer;
+        }
+
+        .note-toggle {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 11px 12px;
+          background: #f8f8f8;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.2s;
+          margin-top: 6px;
+        }
+
+        .note-toggle:hover {
+          background: #f0f0f0;
+          border-color: #ccc;
+        }
+
+        .note-toggle:active {
+          background: #e8e8e8;
+        }
+
+        .note-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #444;
+        }
+
+        .note-hint {
+          font-size: 12px;
+          font-weight: 400;
+          color: #888;
+        }
+
+        .toggle-icon {
+          font-size: 12px;
+          color: #999;
+          transition: transform 0.2s;
+        }
+
+        .note-textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 10px;
+          font-size: 14px;
+          box-sizing: border-box;
           resize: vertical;
           white-space: pre-wrap;
           overflow-wrap: anywhere;
+          margin-top: 8px;
+          min-height: 80px;
+          transition: border-color 0.2s;
+        }
+
+        .note-textarea:focus {
+          outline: none;
+          border-color: #1677ff;
         }
 
         .fe-span2 {
@@ -1035,8 +1129,10 @@ function MobileFixedExpenseForm({
         .fe-actions {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          margin-top: 12px;
+          gap: 12px;
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 1px solid #eee;
         }
 
         .btn-save {
@@ -1045,23 +1141,59 @@ function MobileFixedExpenseForm({
           border: none;
           border-radius: 10px;
           padding: 12px;
-          font-size: 14px;
+          font-size: 15px;
+          font-weight: 500;
           cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .btn-save:hover {
+          background: #0958d9;
+        }
+
+        .btn-save:active {
+          background: #003eb3;
         }
 
         .btn-cancel {
-          background: #666;
+          background: #6c757d;
           color: #fff;
           border: none;
           border-radius: 10px;
           padding: 12px;
-          font-size: 14px;
+          font-size: 15px;
+          font-weight: 500;
           cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .btn-cancel:hover {
+          background: #5a6268;
+        }
+
+        .btn-cancel:active {
+          background: #4e555b;
+        }
+
+        @media (max-width: 400px) {
+          .fe-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+
+          .fe-span2 {
+            grid-column: span 1;
+          }
         }
 
         @media (max-width: 360px) {
+          .fe-card {
+            padding: 12px;
+          }
+
           .fe-actions {
             grid-template-columns: 1fr;
+            gap: 10px;
           }
         }
       `}</style>
