@@ -37,6 +37,7 @@ export default function TransactionsPage() {
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Omit<Transaction, "id">>({
     user_id: "",
     account_id: "",
@@ -174,8 +175,101 @@ export default function TransactionsPage() {
   ];
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>📁 {t("收入/支出", lang)}</h2>
+    <>
+      <style jsx>{`
+        .transactions-container {
+          padding: 20px;
+        }
+
+        .transaction-card {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          padding: 12px;
+          margin-bottom: 12px;
+          cursor: pointer;
+          transition: box-shadow 0.2s;
+        }
+
+        .transaction-card:hover {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .transaction-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 8px;
+        }
+
+        .transaction-card-main {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .transaction-card-amount {
+          font-size: 1.1em;
+          font-weight: bold;
+          white-space: nowrap;
+        }
+
+        .transaction-card-amount.income {
+          color: #28a745;
+        }
+
+        .transaction-card-amount.expense {
+          color: #dc3545;
+        }
+
+        .transaction-card-info {
+          font-size: 0.9em;
+          color: #666;
+          margin: 4px 0;
+        }
+
+        .transaction-card-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid #eee;
+        }
+
+        .transaction-card-note {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid #eee;
+          font-size: 0.9em;
+          color: #666;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+
+        .card-list-view {
+          display: none;
+        }
+
+        .table-view {
+          display: block;
+        }
+
+        @media (max-width: 768px) {
+          .transactions-container {
+            padding: 12px;
+          }
+
+          .card-list-view {
+            display: block;
+          }
+
+          .table-view {
+            display: none;
+          }
+        }
+      `}</style>
+      <div className="transactions-container">
+        <h2>📁 {t("收入/支出", lang)}</h2>
 
       <div style={{ marginBottom: 12, display: "flex", gap: 8 }}>
         <button
@@ -291,53 +385,138 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
-        <thead>
-          <tr>
-            {tableHeaders.map((h) => (
-              <th key={h} style={thStyle}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((t0) => {
+      {/* Card list view for mobile (md以下) */}
+      <div className="card-list-view">
+        {transactions.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 20, color: "#999" }}>
+            {t("暂无数据", lang)}
+          </div>
+        ) : (
+          transactions.map((t0) => {
             const account = accounts.find((a) => a.id === t0.account_id);
+            const isExpanded = expandedCardId === t0.id;
+            const hasNote = t0.note && t0.note.trim() !== "";
+
             return (
-              <tr key={t0.id}>
-                <td style={cellStyle}>{t0.date}</td>
-                <td style={cellStyle}>{t(t0.type, lang)}</td>
-                <td style={cellStyle}>{t(t0.category || "", lang)}</td>
-                <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
-                <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
-                <td style={cellStyle}>{account?.name || t0.account_id}</td>
-                <td style={cellStyle}>{t0.currency}</td>
-                <td style={cellStyle}>{t0.note}</td>
-                <td style={cellStyle}>
+              <div
+                key={t0.id}
+                className="transaction-card"
+                onClick={() => hasNote && setExpandedCardId(isExpanded ? null : t0.id)}
+              >
+                <div className="transaction-card-header">
+                  <div className="transaction-card-main">
+                    <div className="transaction-card-info">
+                      {t0.date} • {t(t0.type, lang)}
+                    </div>
+                    <div className="transaction-card-info">
+                      {t(t0.category || "", lang)}
+                      {t0.subcategory && ` / ${t(t0.subcategory, lang)}`}
+                    </div>
+                    <div className="transaction-card-info">
+                      {account?.name || t0.account_id} • {t0.currency}
+                    </div>
+                  </div>
+                  <div className={`transaction-card-amount ${t0.type === "收入" ? "income" : "expense"}`}>
+                    {t0.type === "收入" ? "+" : "-"}{t0.amount}
+                  </div>
+                </div>
+
+                {hasNote && isExpanded && (
+                  <div className="transaction-card-note">
+                    {t0.note}
+                  </div>
+                )}
+
+                <div className="transaction-card-actions">
                   <button
-                    onClick={() => handleEdit(t0)}
-                    style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(t0);
+                    }}
+                    style={{
+                      backgroundColor: "#ffc107",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      flex: 1
+                    }}
                   >
                     {t("编辑", lang)}
                   </button>
                   <button
-                    onClick={() => handleDelete(t0.id)}
-                    style={{ backgroundColor: "red", color: "white", border: "none", padding: "4px 8px" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(t0.id);
+                    }}
+                    style={{
+                      backgroundColor: "red",
+                      color: "white",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: "4px",
+                      flex: 1
+                    }}
                   >
                     {t("删除", lang)}
                   </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Table view for desktop (md以上) */}
+      <div className="table-view">
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
+          <thead>
+            <tr>
+              {tableHeaders.map((h) => (
+                <th key={h} style={thStyle}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((t0) => {
+              const account = accounts.find((a) => a.id === t0.account_id);
+              return (
+                <tr key={t0.id}>
+                  <td style={cellStyle}>{t0.date}</td>
+                  <td style={cellStyle}>{t(t0.type, lang)}</td>
+                  <td style={cellStyle}>{t(t0.category || "", lang)}</td>
+                  <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
+                  <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
+                  <td style={cellStyle}>{account?.name || t0.account_id}</td>
+                  <td style={cellStyle}>{t0.currency}</td>
+                  <td style={cellStyle}>{t0.note}</td>
+                  <td style={cellStyle}>
+                    <button
+                      onClick={() => handleEdit(t0)}
+                      style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
+                    >
+                      {t("编辑", lang)}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(t0.id)}
+                      style={{ backgroundColor: "red", color: "white", border: "none", padding: "4px 8px" }}
+                    >
+                      {t("删除", lang)}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {transactions.length === 0 && (
+              <tr>
+                <td style={{ ...cellStyle, textAlign: "center" }} colSpan={9}>
+                  {t("暂无数据", lang)}
                 </td>
               </tr>
-            );
-          })}
-          {transactions.length === 0 && (
-            <tr>
-              <td style={{ ...cellStyle, textAlign: "center" }} colSpan={9}>
-                {t("暂无数据", lang)}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
+    </>
   );
 }
