@@ -87,17 +87,16 @@ export default function FixedExpensesPage() {
 
       if (error) {
         console.error("Error fetching expenses:", error);
+        setExpenses([]);
         showToast(t("加载失败：", lang) + error.message);
-        // Fallback to real fixed expenses on error
-        setExpenses(realFixedExpenses as any);
       } else {
-        // If database is empty, use realFixedExpenses as default
-        setExpenses(data && data.length > 0 ? data : (realFixedExpenses as any));
+        // If database is empty, set empty array
+        setExpenses(data || []);
       }
     } catch (err) {
       console.error("Unexpected error in fetchExpenses:", err);
-      // Fallback to real fixed expenses on unexpected error
-      setExpenses(realFixedExpenses as any);
+      setExpenses([]);
+      showToast(lang === "zh" ? "加载失败" : "Failed to load");
     }
   };
 
@@ -253,15 +252,20 @@ export default function FixedExpensesPage() {
     }
 
     // Soft delete by default
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("fixed_expenses")
       .update({ is_active: false })
       .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("*", { count: "exact", head: true });
 
     if (error) {
       console.error("Delete error:", error);
       showToast(t("删除失败：", lang) + error.message);
+    } else if (count === 0) {
+      showToast(lang === "zh"
+        ? "未删除任何记录（可能记录不存在或无权限）"
+        : "No records deleted (record may not exist or no permission)");
     } else {
       showToast(lang === "zh" ? "删除成功" : "Deleted successfully");
       fetchExpenses();
@@ -287,11 +291,19 @@ export default function FixedExpensesPage() {
       return;
     }
 
-    const { error } = await supabase.from("fixed_expenses").delete().eq("id", id).eq("user_id", user.id);
+    const { error, count } = await supabase
+      .from("fixed_expenses")
+      .delete({ count: "exact" })
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Hard delete error:", error);
       showToast(t("删除失败：", lang) + error.message);
+    } else if (count === 0) {
+      showToast(lang === "zh"
+        ? "未删除任何记录（可能记录不存在或无权限）"
+        : "No records deleted (record may not exist or no permission)");
     } else {
       showToast(lang === "zh" ? "永久删除成功" : "Permanently deleted");
       fetchExpenses();
