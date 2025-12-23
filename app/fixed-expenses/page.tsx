@@ -252,17 +252,19 @@ export default function FixedExpensesPage() {
     }
 
     // Soft delete by default
-    const { error, count } = await supabase
+    const { data, error } = await supabase
       .from("fixed_expenses")
       .update({ is_active: false })
       .eq("id", id)
       .eq("user_id", user.id)
-      .select("*", { count: "exact", head: true });
+      .select("id");
+
+    const affected = data?.length ?? 0;
 
     if (error) {
       console.error("Delete error:", error);
       showToast(t("删除失败：", lang) + error.message);
-    } else if (count === 0) {
+    } else if (affected === 0) {
       showToast(lang === "zh"
         ? "未删除任何记录（可能记录不存在或无权限）"
         : "No records deleted (record may not exist or no permission)");
@@ -291,16 +293,19 @@ export default function FixedExpensesPage() {
       return;
     }
 
-    const { error, count } = await supabase
+    const { data, error } = await supabase
       .from("fixed_expenses")
-      .delete({ count: "exact" })
+      .delete()
       .eq("id", id)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .select("id");
+
+    const affected = data?.length ?? 0;
 
     if (error) {
       console.error("Hard delete error:", error);
       showToast(t("删除失败：", lang) + error.message);
-    } else if (count === 0) {
+    } else if (affected === 0) {
       showToast(lang === "zh"
         ? "未删除任何记录（可能记录不存在或无权限）"
         : "No records deleted (record may not exist or no permission)");
