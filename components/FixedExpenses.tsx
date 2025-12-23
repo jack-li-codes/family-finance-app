@@ -7,7 +7,6 @@ import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
 import {
   demoFixedExpenses,
-  realFixedExpenses,
   type FixedExpense,
 } from "./fixedExpensesConfig";
 
@@ -91,16 +90,13 @@ export default function FixedExpenses() {
 
       if (error) {
         console.error("Error fetching fixed expenses:", error);
-        // If database fetch fails for real users, use realFixedExpenses as fallback
-        setExpenses(realFixedExpenses);
+        setExpenses([]);
       } else {
-        // If database is empty, use realFixedExpenses as default
-        setExpenses(data && data.length > 0 ? data : realFixedExpenses);
+        setExpenses(data || []);
       }
     } catch (err) {
       console.error("Error:", err);
-      // Fallback to real expenses on error
-      setExpenses(realFixedExpenses);
+      setExpenses([]);
     } finally {
       setLoading(false);
     }
