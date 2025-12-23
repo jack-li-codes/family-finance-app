@@ -41,9 +41,23 @@ export default function FixedExpensesPage() {
   const [importError, setImportError] = useState<string | null>(null);
   // Added: Track if current user is a demo user
   const [isDemoUser, setIsDemoUser] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchExpenses();
+  }, []);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+    };
+
+    setIsMobile(mql.matches);
+    const listener = (e: MediaQueryListEvent) => handler(e);
+    mql.addEventListener?.("change", listener);
+
+    return () => mql.removeEventListener?.("change", listener);
   }, []);
 
   const fetchExpenses = async () => {
@@ -618,123 +632,137 @@ export default function FixedExpensesPage() {
         {showForm && (
           <div style={{ backgroundColor: "#f9f9f9", padding: 20, border: "1px solid #ddd", borderRadius: 6, marginBottom: 24 }}>
             <h3>{editingId ? (lang === "zh" ? "编辑项目" : "Edit Item") : (lang === "zh" ? "新增项目" : "Add Item")}</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ ...thStyle, width: "60px" }}>{lang === "zh" ? "图标" : "Icon"}</th>
-                  <th style={{ ...thStyle, width: "200px" }}>{lang === "zh" ? "名称" : "Name"} *</th>
-                  <th style={{ ...thStyle, width: "120px" }}>{lang === "zh" ? "金额" : "Amount"} *</th>
-                  <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "币种" : "Currency"}</th>
-                  <th style={thStyle}>{lang === "zh" ? "备注" : "Note"}</th>
-                  <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "排序" : "Sort"}</th>
-                  <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "启用" : "Active"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={tdStyle}>
-                    <input
-                      name="icon"
-                      value={formData.icon}
-                      onChange={handleChange}
-                      placeholder="📅"
-                      style={{ ...inputStyle, textAlign: "center" }}
-                      maxLength={4}
-                    />
-                  </td>
-                  <td style={tdStyle}>
-                    <input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder={lang === "zh" ? "例如：房贷" : "e.g., Mortgage"}
-                      style={inputStyle}
-                      required
-                    />
-                  </td>
-                  <td style={tdStyle}>
-                    <input
-                      name="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      placeholder="0.00"
-                      style={inputStyle}
-                      required
-                    />
-                  </td>
-                  <td style={tdStyle}>
-                    <select name="currency" value={formData.currency} onChange={handleChange} style={inputStyle}>
-                      <option value="CAD">CAD</option>
-                      <option value="USD">USD</option>
-                      <option value="CNY">CNY</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                  </td>
-                  <td style={tdStyle}>
-                    <input
-                      name="note"
-                      value={formData.note}
-                      onChange={handleChange}
-                      placeholder={lang === "zh" ? "（每月28号）" : "(Due on 28th)"}
-                      style={inputStyle}
-                    />
-                  </td>
-                  <td style={tdStyle}>
-                    <input
-                      name="sort_order"
-                      type="number"
-                      value={formData.sort_order}
-                      onChange={handleChange}
-                      placeholder="0"
-                      style={inputStyle}
-                    />
-                  </td>
-                  <td style={tdStyle}>
-                    <input
-                      name="is_active"
-                      type="checkbox"
-                      checked={formData.is_active}
-                      onChange={handleChange}
-                      style={{ width: "20px", height: "20px" }}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div style={{ marginTop: 16 }}>
-              <button
-                onClick={handleSubmit}
-                style={{
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  padding: "10px 24px",
-                  borderRadius: 4,
-                  border: "none",
-                  cursor: "pointer",
-                  marginRight: 10,
-                  fontSize: "14px",
-                }}
-              >
-                {t("保存", lang)}
-              </button>
-              <button
-                onClick={resetForm}
-                style={{
-                  backgroundColor: "#6c757d",
-                  color: "white",
-                  padding: "10px 24px",
-                  borderRadius: 4,
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                {t("取消", lang)}
-              </button>
-            </div>
+
+            {isMobile ? (
+              <MobileFixedExpenseForm
+                value={formData}
+                onChange={setFormData}
+                onSave={handleSubmit}
+                onCancel={resetForm}
+                isEditing={!!editingId}
+                lang={lang}
+              />
+            ) : (
+              <>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...thStyle, width: "60px" }}>{lang === "zh" ? "图标" : "Icon"}</th>
+                      <th style={{ ...thStyle, width: "200px" }}>{lang === "zh" ? "名称" : "Name"} *</th>
+                      <th style={{ ...thStyle, width: "120px" }}>{lang === "zh" ? "金额" : "Amount"} *</th>
+                      <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "币种" : "Currency"}</th>
+                      <th style={thStyle}>{lang === "zh" ? "备注" : "Note"}</th>
+                      <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "排序" : "Sort"}</th>
+                      <th style={{ ...thStyle, width: "80px" }}>{lang === "zh" ? "启用" : "Active"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={tdStyle}>
+                        <input
+                          name="icon"
+                          value={formData.icon}
+                          onChange={handleChange}
+                          placeholder="📅"
+                          style={{ ...inputStyle, textAlign: "center" }}
+                          maxLength={4}
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <input
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          placeholder={lang === "zh" ? "例如：房贷" : "e.g., Mortgage"}
+                          style={inputStyle}
+                          required
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <input
+                          name="amount"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.amount}
+                          onChange={handleChange}
+                          placeholder="0.00"
+                          style={inputStyle}
+                          required
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <select name="currency" value={formData.currency} onChange={handleChange} style={inputStyle}>
+                          <option value="CAD">CAD</option>
+                          <option value="USD">USD</option>
+                          <option value="CNY">CNY</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </td>
+                      <td style={tdStyle}>
+                        <input
+                          name="note"
+                          value={formData.note}
+                          onChange={handleChange}
+                          placeholder={lang === "zh" ? "（每月28号）" : "(Due on 28th)"}
+                          style={inputStyle}
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <input
+                          name="sort_order"
+                          type="number"
+                          value={formData.sort_order}
+                          onChange={handleChange}
+                          placeholder="0"
+                          style={inputStyle}
+                        />
+                      </td>
+                      <td style={tdStyle}>
+                        <input
+                          name="is_active"
+                          type="checkbox"
+                          checked={formData.is_active}
+                          onChange={handleChange}
+                          style={{ width: "20px", height: "20px" }}
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 16 }}>
+                  <button
+                    onClick={handleSubmit}
+                    style={{
+                      backgroundColor: "#007bff",
+                      color: "white",
+                      padding: "10px 24px",
+                      borderRadius: 4,
+                      border: "none",
+                      cursor: "pointer",
+                      marginRight: 10,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {t("保存", lang)}
+                  </button>
+                  <button
+                    onClick={resetForm}
+                    style={{
+                      backgroundColor: "#6c757d",
+                      color: "white",
+                      padding: "10px 24px",
+                      borderRadius: 4,
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {t("取消", lang)}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -845,5 +873,198 @@ export default function FixedExpensesPage() {
         </table>
       </div>
     </AuthGuard>
+  );
+}
+
+// Mobile Form Component
+function MobileFixedExpenseForm({
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  isEditing,
+  lang,
+}: {
+  value: FixedExpense;
+  onChange: (v: FixedExpense) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isEditing: boolean;
+  lang: string;
+}) {
+  const handleInputChange = (field: keyof FixedExpense, inputValue: string | boolean) => {
+    onChange({ ...value, [field]: inputValue });
+  };
+
+  return (
+    <>
+      <div className="fe-card">
+        <div className="fe-grid">
+          <div className="fe-field">
+            <label>{lang === "zh" ? "图标" : "Icon"}</label>
+            <input
+              value={value.icon ?? ""}
+              onChange={(e) => handleInputChange("icon", e.target.value)}
+              placeholder="📅"
+              maxLength={4}
+            />
+          </div>
+
+          <div className="fe-field">
+            <label>{lang === "zh" ? "启用" : "Active"}</label>
+            <input
+              type="checkbox"
+              checked={!!value.is_active}
+              onChange={(e) => handleInputChange("is_active", e.target.checked)}
+              style={{ width: "20px", height: "20px" }}
+            />
+          </div>
+
+          <div className="fe-field fe-span2">
+            <label>{lang === "zh" ? "名称" : "Name"} *</label>
+            <input
+              value={value.name ?? ""}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder={lang === "zh" ? "例如：房贷" : "e.g., Mortgage"}
+              required
+            />
+          </div>
+
+          <div className="fe-field">
+            <label>{lang === "zh" ? "金额" : "Amount"} *</label>
+            <input
+              inputMode="decimal"
+              type="number"
+              step="0.01"
+              min="0"
+              value={value.amount ?? ""}
+              onChange={(e) => handleInputChange("amount", e.target.value)}
+              placeholder="0.00"
+              required
+            />
+          </div>
+
+          <div className="fe-field">
+            <label>{lang === "zh" ? "币种" : "Currency"}</label>
+            <select
+              value={value.currency ?? "CAD"}
+              onChange={(e) => handleInputChange("currency", e.target.value)}
+            >
+              <option value="CAD">CAD</option>
+              <option value="USD">USD</option>
+              <option value="CNY">CNY</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+
+          <div className="fe-field">
+            <label>{lang === "zh" ? "排序" : "Sort"}</label>
+            <input
+              inputMode="numeric"
+              type="number"
+              value={value.sort_order ?? ""}
+              onChange={(e) => handleInputChange("sort_order", e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="fe-field fe-span2">
+            <label>{lang === "zh" ? "备注" : "Note"}</label>
+            <textarea
+              rows={3}
+              value={value.note ?? ""}
+              onChange={(e) => handleInputChange("note", e.target.value)}
+              placeholder={lang === "zh" ? "可写长备注，完整显示" : "Write notes, fully displayed"}
+            />
+          </div>
+        </div>
+
+        <div className="fe-actions">
+          <button className="btn-save" onClick={onSave}>
+            {lang === "zh" ? "保存" : "Save"}
+          </button>
+          <button className="btn-cancel" onClick={onCancel}>
+            {lang === "zh" ? "取消" : "Cancel"}
+          </button>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .fe-card {
+          border: 1px solid #ddd;
+          border-radius: 12px;
+          padding: 12px;
+          background: #fff;
+          margin: 12px 0;
+        }
+
+        .fe-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+
+        .fe-field label {
+          display: block;
+          font-size: 12px;
+          opacity: 0.8;
+          margin-bottom: 4px;
+        }
+
+        .fe-field input,
+        .fe-field select,
+        .fe-field textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 10px;
+          font-size: 14px;
+          box-sizing: border-box;
+        }
+
+        .fe-field textarea {
+          resize: vertical;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+
+        .fe-span2 {
+          grid-column: span 2;
+        }
+
+        .fe-actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-top: 12px;
+        }
+
+        .btn-save {
+          background: #1677ff;
+          color: #fff;
+          border: none;
+          border-radius: 10px;
+          padding: 12px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        .btn-cancel {
+          background: #666;
+          color: #fff;
+          border: none;
+          border-radius: 10px;
+          padding: 12px;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        @media (max-width: 360px) {
+          .fe-actions {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </>
   );
 }
