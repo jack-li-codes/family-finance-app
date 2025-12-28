@@ -15,6 +15,7 @@ const ACCOUNT_CATEGORY_OPTIONS = [
   "信用账户",
   "现金账户",
   "社保账户",
+  "教育基金",
 ] as const;
 
 type Account = {

@@ -218,7 +218,9 @@ const base: Record<string, string> = {
    "转账-": "Transfer",
    "还信用卡": "Credit Card Payment",
    "内部转账": "Internal Transfer",
- 
+   "Jack教育基金": "Jack Education Fund",
+   "James教育基金": "James Education Fund",
+
    "补贴": "Adjustment",
    "平帐补贴": "Balance Adjustment",
 
@@ -234,6 +236,7 @@ const base: Record<string, string> = {
     "信用账户": "Credit Account",
     "现金账户": "Cash Account",
     "社保账户": "Social Account",
+    "教育基金": "Education Fund",
 
 
    // ===== Summary Page (SummaryPage) Terminology =====
