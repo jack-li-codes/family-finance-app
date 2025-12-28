@@ -31,7 +31,8 @@ function toLocalYMD(date: Date): string {
 }
 
 function parseDateOnlyLocal(ymd: string): Date {
-  return new Date(`${ymd}T12:00:00`);
+  const [year, month, day] = ymd.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function getWeekRange(date: Date | string): { start: string; end: string } {
@@ -84,7 +85,7 @@ export default function WorklogPage() {
 
   const getWeekday = (dateStr: string) => {
     const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
-    const date = new Date(dateStr);
+    const date = parseDateOnlyLocal(dateStr);
     return weekdays[date.getDay()];
   };
 
@@ -138,7 +139,7 @@ export default function WorklogPage() {
 
     // 本月统计
     const thisMonthLogs = filteredLogs.filter(log => {
-      const logMonth = formatMonthKey(new Date(log.date));
+      const logMonth = formatMonthKey(parseDateOnlyLocal(log.date));
       return logMonth === currentMonth;
     });
     const thisMonthHours = thisMonthLogs.reduce((sum, log) => {
@@ -173,7 +174,7 @@ export default function WorklogPage() {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = formatMonthKey(monthDate);
       const monthLogs = filteredLogs.filter(log => {
-        const logMonth = formatMonthKey(new Date(log.date));
+        const logMonth = formatMonthKey(parseDateOnlyLocal(log.date));
         return logMonth === monthKey;
       });
       const monthHours = monthLogs.reduce((sum, log) => {
