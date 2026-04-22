@@ -42,11 +42,13 @@ function Nav() {
   const displayName = userEmail ? userEmail.split('@')[0] : null;
 
   const navItems = [
-    { icon: "💳", key: "账户管理", href: "/accounts" },
+    { icon: "🏠", key: "账户管理", href: "/accounts" },
+    { icon: "📂", key: "分类管理", href: "/categories" },
+    { icon: "👤", key: "用户管理", href: "/users", adminOnly: true },
     { icon: "💰", key: "固定花销管理", href: "/fixed-expenses" },
-    { icon: "📁", key: "收入/支出", href: "/transactions" },
+    { icon: "📄", key: "收入/支出", href: "/transactions" },
     { icon: "📊", key: "收支汇总", href: "/summary" },
-    { icon: "📊", key: "账户总揽", href: "/account-overview" },
+    { icon: "📈", key: "账户总揽", href: "/account-overview" },
     { icon: "🛠", key: "工程记录", href: "/worklog" },
     { icon: "📊", key: "账户余额", href: "/balance" },
     { icon: "📚", key: "项目管理", href: "/projects" },

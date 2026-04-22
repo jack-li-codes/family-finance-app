@@ -6,21 +6,7 @@ import { Transaction } from "../types";
 import * as XLSX from "xlsx";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
-
-const categoryOptions: Record<string, string[]> = {
-  "食物": ["买菜", "餐厅/外卖", "工作餐A", "工作餐B", "饮品/甜品", "其他"],
-  "车辆": ["汽车保险", "车1贷款", "车1加油", "车2加油", "车1修车保养", "车2修车保养", "其他"],
-  "工程": ["自家工程", "客户工程", "其他"],
-  "房屋": ["房贷", "网费", "水费", "电费", "燃气费", "手机费", "房屋保险", "其他", "地税"],
-  "家用": ["厨房用品", "家居用品", "卫浴用品", "家居装饰", "其他"],
-  "教育": ["课外课程", "学校费用", "书籍/软件", "考试费用", "学习用品", "运动/活动", "爸妈教育", "其他费用"],
-  "服饰": ["鞋包/饰品", "衣服", "美发美甲", "护肤美容", "其他"],
-  "休闲": ["会员", "门票/项目费用", "住宿", "交通", "餐饮", "其他"],
-  "医疗": ["牙医","药物", "门诊", "其他"],
-  "转账": ["还信用卡", "内部转账", "Jack教育基金", "James教育基金", "其他"],
-  "补贴": ["平帐补贴",  "其他"],
-  "其他": ["其他"]
-};
+import { categoryOptions } from "@/lib/category-options";
 
 // Generate local timezone YYYY-MM-DD (avoid date shift across timezones)
 const toLocalISODate = (d: Date) => {
