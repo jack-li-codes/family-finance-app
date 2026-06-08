@@ -34,6 +34,7 @@ export default function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<Omit<Transaction, "id">>({
     user_id: "",
     account_id: "",
@@ -84,7 +85,14 @@ export default function TransactionsPage() {
   };
 
   const exportToExcel = () => {
-    const formatted = transactions.map((t0) => {
+    const transactionsToExport =
+      selectedTransactionIds.length > 0
+        ? transactions.filter((transaction) =>
+            selectedTransactionIdSet.has(transaction.id),
+          )
+        : transactions;
+
+    const formatted = transactionsToExport.map((t0) => {
       const account = accounts.find((a) => a.id === t0.account_id);
       return {
         [t("日期", lang)]: t0.date,
@@ -195,6 +203,61 @@ export default function TransactionsPage() {
       ...currentExpandedMonths,
       [month]: !currentExpandedMonths[month],
     }));
+  };
+
+  useEffect(() => {
+    const transactionIds = new Set(transactions.map((transaction) => transaction.id));
+
+    setSelectedTransactionIds((currentIds) =>
+      currentIds.filter((id) => transactionIds.has(id)),
+    );
+  }, [transactions]);
+
+  const selectedTransactionIdSet = useMemo(
+    () => new Set(selectedTransactionIds),
+    [selectedTransactionIds],
+  );
+  const selectedTransactionCount = transactions.filter((transaction) =>
+    selectedTransactionIdSet.has(transaction.id),
+  ).length;
+  const allTransactionsSelected =
+    transactions.length > 0 &&
+    transactions.every((transaction) => selectedTransactionIdSet.has(transaction.id));
+
+  const toggleTransactionSelection = (transactionId: string) => {
+    setSelectedTransactionIds((currentIds) =>
+      currentIds.includes(transactionId)
+        ? currentIds.filter((id) => id !== transactionId)
+        : [...currentIds, transactionId],
+    );
+  };
+
+  const setAllTransactionsSelected = (checked: boolean) => {
+    setSelectedTransactionIds(checked ? transactions.map((transaction) => transaction.id) : []);
+  };
+
+  const setMonthTransactionsSelected = (
+    monthTransactions: Transaction[],
+    checked: boolean,
+  ) => {
+    const monthTransactionIds = monthTransactions.map((transaction) => transaction.id);
+
+    setSelectedTransactionIds((currentIds) => {
+      if (!checked) {
+        return currentIds.filter((id) => !monthTransactionIds.includes(id));
+      }
+
+      return Array.from(new Set([...currentIds, ...monthTransactionIds]));
+    });
+  };
+
+  const areMonthTransactionsSelected = (monthTransactions: Transaction[]) => {
+    return (
+      monthTransactions.length > 0 &&
+      monthTransactions.every((transaction) =>
+        selectedTransactionIdSet.has(transaction.id),
+      )
+    );
   };
 
   const cellStyle = {
@@ -344,6 +407,20 @@ export default function TransactionsPage() {
         </button>
       </div>
 
+      <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input
+            checked={allTransactionsSelected}
+            onChange={(event) => setAllTransactionsSelected(event.target.checked)}
+            type="checkbox"
+          />
+          {t("全选", lang)}
+        </label>
+        <span>
+          {t("已选", lang)} {selectedTransactionCount} {t("笔", lang)}
+        </span>
+      </div>
+
       {showForm && (
         <div style={{ padding: 12, border: "1px solid #ccc", marginBottom: 16, background: "#f9f9f9" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
@@ -442,14 +519,16 @@ export default function TransactionsPage() {
         ) : (
           groupedTransactions.map((group) => {
             const isMonthExpanded = expandedMonths[group.month] ?? false;
+            const isMonthSelected = areMonthTransactionsSelected(group.transactions);
 
             return (
               <div key={group.month}>
-                <button
-                  onClick={() => toggleMonth(group.month)}
+                <div
                   style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
                     width: "100%",
-                    textAlign: "left",
                     padding: "10px 12px",
                     marginBottom: 8,
                     background: "#f0f0f0",
@@ -457,17 +536,40 @@ export default function TransactionsPage() {
                     borderRadius: 6,
                     fontWeight: "bold",
                   }}
-                  type="button"
                 >
-                  {isMonthExpanded ? "▼" : "▶"} {group.month}（
-                  {group.transactions.length}笔）
-                </button>
+                  <input
+                    checked={isMonthSelected}
+                    onChange={(event) =>
+                      setMonthTransactionsSelected(
+                        group.transactions,
+                        event.target.checked,
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  <button
+                    onClick={() => toggleMonth(group.month)}
+                    style={{
+                      flex: 1,
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      textAlign: "left",
+                      fontWeight: "bold",
+                    }}
+                    type="button"
+                  >
+                    {isMonthExpanded ? "▼" : "▶"} {group.month}（
+                    {group.transactions.length}笔）
+                  </button>
+                </div>
 
                 {isMonthExpanded &&
                   group.transactions.map((t0) => {
                     const account = accounts.find((a) => a.id === t0.account_id);
                     const isExpanded = expandedCardId === t0.id;
                     const hasNote = t0.note && t0.note.trim() !== "";
+                    const isSelected = selectedTransactionIdSet.has(t0.id);
 
                     return (
                       <div
@@ -476,6 +578,12 @@ export default function TransactionsPage() {
                         onClick={() => hasNote && setExpandedCardId(isExpanded ? null : t0.id)}
                       >
                         <div className="transaction-card-header">
+                          <input
+                            checked={isSelected}
+                            onChange={() => toggleTransactionSelection(t0.id)}
+                            onClick={(event) => event.stopPropagation()}
+                            type="checkbox"
+                          />
                           <div className="transaction-card-main">
                             <div className="transaction-card-info">
                               {t0.date} • {t(t0.type, lang)}
@@ -546,6 +654,13 @@ export default function TransactionsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
+              <th style={thStyle}>
+                <input
+                  checked={allTransactionsSelected}
+                  onChange={(event) => setAllTransactionsSelected(event.target.checked)}
+                  type="checkbox"
+                />
+              </th>
               {tableHeaders.map((h) => (
                 <th key={h} style={thStyle}>{h}</th>
               ))}
@@ -554,29 +669,60 @@ export default function TransactionsPage() {
           <tbody>
             {groupedTransactions.map((group) => {
               const isMonthExpanded = expandedMonths[group.month] ?? false;
+              const isMonthSelected = areMonthTransactionsSelected(group.transactions);
 
               return (
                 <Fragment key={group.month}>
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={10}
                       style={{
                         ...cellStyle,
                         backgroundColor: "#f0f0f0",
                         fontWeight: "bold",
-                        cursor: "pointer",
                       }}
-                      onClick={() => toggleMonth(group.month)}
                     >
-                      {isMonthExpanded ? "▼" : "▶"} {group.month}（
-                      {group.transactions.length}笔）
+                      <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <input
+                          checked={isMonthSelected}
+                          onChange={(event) =>
+                            setMonthTransactionsSelected(
+                              group.transactions,
+                              event.target.checked,
+                            )
+                          }
+                          type="checkbox"
+                        />
+                        <button
+                          onClick={() => toggleMonth(group.month)}
+                          style={{
+                            border: "none",
+                            background: "transparent",
+                            padding: 0,
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                          }}
+                          type="button"
+                        >
+                          {isMonthExpanded ? "▼" : "▶"} {group.month}（
+                          {group.transactions.length}笔）
+                        </button>
+                      </label>
                     </td>
                   </tr>
                   {isMonthExpanded &&
                     group.transactions.map((t0) => {
                       const account = accounts.find((a) => a.id === t0.account_id);
+                      const isSelected = selectedTransactionIdSet.has(t0.id);
                       return (
                         <tr key={t0.id}>
+                          <td style={cellStyle}>
+                            <input
+                              checked={isSelected}
+                              onChange={() => toggleTransactionSelection(t0.id)}
+                              type="checkbox"
+                            />
+                          </td>
                           <td style={cellStyle}>{t0.date}</td>
                           <td style={cellStyle}>{t(t0.type, lang)}</td>
                           <td style={cellStyle}>{t(t0.category || "", lang)}</td>
@@ -607,7 +753,7 @@ export default function TransactionsPage() {
             })}
             {transactions.length === 0 && (
               <tr>
-                <td style={{ ...cellStyle, textAlign: "center" }} colSpan={9}>
+                <td style={{ ...cellStyle, textAlign: "center" }} colSpan={10}>
                   {t("暂无数据", lang)}
                 </td>
               </tr>
