@@ -46,10 +46,13 @@ const isExpense = (s: string) => s === "支出" || s.toLowerCase() === "expense"
 const isTransfer = (s: string) => s === "转账" || s.toLowerCase() === "transfer";
 const isProjectCat = (s: string) =>
   s === "工程" || s.toLowerCase() === "project" || s === "Project";
+const excludedFromSummaryTotalCategories = ["工程", "转账", "资金注入", "调账"];
 
-/** 某些分类不参与占比与 total（工程、转账） */
+/** 某些分类不参与占比与 total，但仍显示明细 */
 const isExcludedForPercentOrTotal = (cat: string) =>
-  isTransfer(cat) || isProjectCat(cat);
+  excludedFromSummaryTotalCategories.includes(cat) ||
+  isTransfer(cat) ||
+  isProjectCat(cat);
 
 /** 通用折叠组件（按钮控制，移动端友好） */
 function ToggleSection({
