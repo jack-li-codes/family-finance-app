@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
 import { categoryOptions } from "@/lib/category-options";
+import { sortAccountsByPreferredOrder } from "@/lib/accountSort";
 
 // Generate local timezone YYYY-MM-DD (avoid date shift across timezones)
 const toLocalISODate = (d: Date) => {
@@ -159,6 +160,7 @@ export default function TransactionsPage() {
     t("备注", lang),
     t("操作", lang),
   ];
+  const sortedAccounts = sortAccountsByPreferredOrder(accounts);
 
   return (
     <>
@@ -337,7 +339,7 @@ export default function TransactionsPage() {
               {t("账户", lang)}
               <select name="account_id" value={formData.account_id} onChange={handleInputChange}>
                 <option value="">{t("选择账户", lang)}</option>
-                {accounts.map((acc) => (
+                {sortedAccounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>
                     {acc.name}
                   </option>

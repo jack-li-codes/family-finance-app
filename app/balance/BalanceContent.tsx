@@ -7,6 +7,7 @@ import { saveAs } from "file-saver";
 import { Transaction } from "../types";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
+import { sortAccountsByPreferredOrder } from "@/lib/accountSort";
 
 type Account = {
   id: string;
@@ -92,6 +93,8 @@ export default function BalanceContent() {
 
   if (checking) return null;
 
+  const sortedAccounts = sortAccountsByPreferredOrder(accounts);
+
   return (
     <div style={{ padding: "20px", maxWidth: "1000px", marginLeft: 0, marginRight: "auto", fontFamily: "sans-serif" }}>
       <h1>📊 {t("账户余额快照", lang)}</h1>
@@ -130,8 +133,8 @@ export default function BalanceContent() {
           </tr>
         </thead>
         <tbody>
-          {accounts.map((acc, idx) => (
-            <tr key={idx}>
+          {sortedAccounts.map((acc) => (
+            <tr key={acc.id}>
               <td style={{ border: "1px solid #ccc", padding: "8px" }}>{acc.name}</td>
               <td style={{ border: "1px solid #ccc", padding: "8px" }}>{acc.currency}</td>
               <td style={{ border: "1px solid #ccc", padding: "8px" }}>

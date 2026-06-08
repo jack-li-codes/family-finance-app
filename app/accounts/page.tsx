@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import FixedExpenses from "@/components/FixedExpenses";
 import { useLang } from "@/app/i18n-context";
 import { t } from "@/app/i18n";
+import { sortAccountsByPreferredOrder } from "@/lib/accountSort";
 
 // Account category options (values kept in Chinese for backward compatibility; display uses t())
 const ACCOUNT_CATEGORY_OPTIONS = [
@@ -220,6 +221,7 @@ export default function AccountsPage() {
     verticalAlign: "middle",
     whiteSpace: "nowrap" as const,
   };
+  const sortedAccounts = sortAccountsByPreferredOrder(accounts);
 
   return (
     <AuthGuard>
@@ -339,7 +341,7 @@ export default function AccountsPage() {
             </tr>
           </thead>
           <tbody>
-            {accounts.map((acc) => (
+            {sortedAccounts.map((acc) => (
               <tr key={acc.id}>
                 <td style={tdStyle}>{acc.name}</td>
                 <td style={tdStyle}>{t(acc.category, lang)}</td>
