@@ -221,6 +221,16 @@ const base: Record<string, string> = {
    "Jack教育基金": "Jack Education Fund",
    "James教育基金": "James Education Fund",
 
+   "资金注入": "Fund Injection",
+   "家庭备用金转入": "Family Reserve Transfer In",
+   "外部账户转入": "External Account Transfer In",
+   "还信用卡资金": "Credit Card Repayment Fund",
+
+   "调账": "Adjustment",
+   "对账调整": "Reconciliation Adjustment",
+   "余额修正": "Balance Correction",
+   "差额调整": "Difference Adjustment",
+
    "补贴": "Adjustment",
    "平帐补贴": "Balance Adjustment",
 
