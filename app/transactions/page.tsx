@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Transaction } from "../types";
 import * as XLSX from "xlsx";
@@ -16,6 +16,14 @@ const toLocalISODate = (d: Date) => {
   return local.toISOString().slice(0, 10);
 };
 
+const getTransactionMonth = (date: string) => {
+  return date?.slice(0, 7) || "Unknown";
+};
+
+const getCurrentMonth = () => {
+  return toLocalISODate(new Date()).slice(0, 7);
+};
+
 export default function TransactionsPage() {
   const { lang } = useLang();
 
@@ -25,6 +33,7 @@ export default function TransactionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<Omit<Transaction, "id">>({
     user_id: "",
     account_id: "",
@@ -135,6 +144,57 @@ export default function TransactionsPage() {
     const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (!error) fetchTransactions(userId);
     else alert(`${t("❌ 删除失败：", lang)}${error.message}`);
+  };
+
+  const groupedTransactions = useMemo(() => {
+    const monthMap = new Map<string, Transaction[]>();
+
+    transactions.forEach((transaction) => {
+      const month = getTransactionMonth(transaction.date);
+      const monthTransactions = monthMap.get(month) || [];
+
+      monthTransactions.push(transaction);
+      monthMap.set(month, monthTransactions);
+    });
+
+    return Array.from(monthMap, ([month, monthTransactions]) => ({
+      month,
+      transactions: monthTransactions,
+    }));
+  }, [transactions]);
+
+  useEffect(() => {
+    if (groupedTransactions.length === 0) {
+      return;
+    }
+
+    const currentMonth = getCurrentMonth();
+    const defaultOpenMonth = groupedTransactions.some(
+      (group) => group.month === currentMonth,
+    )
+      ? currentMonth
+      : groupedTransactions[0].month;
+
+    setExpandedMonths((currentExpandedMonths) => {
+      let changed = false;
+      const nextExpandedMonths = { ...currentExpandedMonths };
+
+      groupedTransactions.forEach((group) => {
+        if (nextExpandedMonths[group.month] === undefined) {
+          nextExpandedMonths[group.month] = group.month === defaultOpenMonth;
+          changed = true;
+        }
+      });
+
+      return changed ? nextExpandedMonths : currentExpandedMonths;
+    });
+  }, [groupedTransactions]);
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonths((currentExpandedMonths) => ({
+      ...currentExpandedMonths,
+      [month]: !currentExpandedMonths[month],
+    }));
   };
 
   const cellStyle = {
@@ -380,74 +440,101 @@ export default function TransactionsPage() {
             {t("暂无数据", lang)}
           </div>
         ) : (
-          transactions.map((t0) => {
-            const account = accounts.find((a) => a.id === t0.account_id);
-            const isExpanded = expandedCardId === t0.id;
-            const hasNote = t0.note && t0.note.trim() !== "";
+          groupedTransactions.map((group) => {
+            const isMonthExpanded = expandedMonths[group.month] ?? false;
 
             return (
-              <div
-                key={t0.id}
-                className="transaction-card"
-                onClick={() => hasNote && setExpandedCardId(isExpanded ? null : t0.id)}
-              >
-                <div className="transaction-card-header">
-                  <div className="transaction-card-main">
-                    <div className="transaction-card-info">
-                      {t0.date} • {t(t0.type, lang)}
-                    </div>
-                    <div className="transaction-card-info">
-                      {t(t0.category || "", lang)}
-                      {t0.subcategory && ` / ${t(t0.subcategory, lang)}`}
-                    </div>
-                    <div className="transaction-card-info">
-                      {account?.name || t0.account_id} • {t0.currency}
-                    </div>
-                  </div>
-                  <div className={`transaction-card-amount ${t0.type === "收入" ? "income" : "expense"}`}>
-                    {t0.type === "收入" ? "+" : "-"}{t0.amount}
-                  </div>
-                </div>
+              <div key={group.month}>
+                <button
+                  onClick={() => toggleMonth(group.month)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "10px 12px",
+                    marginBottom: 8,
+                    background: "#f0f0f0",
+                    border: "1px solid #ddd",
+                    borderRadius: 6,
+                    fontWeight: "bold",
+                  }}
+                  type="button"
+                >
+                  {isMonthExpanded ? "▼" : "▶"} {group.month}（
+                  {group.transactions.length}笔）
+                </button>
 
-                {hasNote && isExpanded && (
-                  <div className="transaction-card-note">
-                    {t0.note}
-                  </div>
-                )}
+                {isMonthExpanded &&
+                  group.transactions.map((t0) => {
+                    const account = accounts.find((a) => a.id === t0.account_id);
+                    const isExpanded = expandedCardId === t0.id;
+                    const hasNote = t0.note && t0.note.trim() !== "";
 
-                <div className="transaction-card-actions">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(t0);
-                    }}
-                    style={{
-                      backgroundColor: "#ffc107",
-                      border: "none",
-                      padding: "6px 12px",
-                      borderRadius: "4px",
-                      flex: 1
-                    }}
-                  >
-                    {t("编辑", lang)}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(t0.id);
-                    }}
-                    style={{
-                      backgroundColor: "red",
-                      color: "white",
-                      border: "none",
-                      padding: "6px 12px",
-                      borderRadius: "4px",
-                      flex: 1
-                    }}
-                  >
-                    {t("删除", lang)}
-                  </button>
-                </div>
+                    return (
+                      <div
+                        key={t0.id}
+                        className="transaction-card"
+                        onClick={() => hasNote && setExpandedCardId(isExpanded ? null : t0.id)}
+                      >
+                        <div className="transaction-card-header">
+                          <div className="transaction-card-main">
+                            <div className="transaction-card-info">
+                              {t0.date} • {t(t0.type, lang)}
+                            </div>
+                            <div className="transaction-card-info">
+                              {t(t0.category || "", lang)}
+                              {t0.subcategory && ` / ${t(t0.subcategory, lang)}`}
+                            </div>
+                            <div className="transaction-card-info">
+                              {account?.name || t0.account_id} • {t0.currency}
+                            </div>
+                          </div>
+                          <div className={`transaction-card-amount ${t0.type === "收入" ? "income" : "expense"}`}>
+                            {t0.type === "收入" ? "+" : "-"}{t0.amount}
+                          </div>
+                        </div>
+
+                        {hasNote && isExpanded && (
+                          <div className="transaction-card-note">
+                            {t0.note}
+                          </div>
+                        )}
+
+                        <div className="transaction-card-actions">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(t0);
+                            }}
+                            style={{
+                              backgroundColor: "#ffc107",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "4px",
+                              flex: 1
+                            }}
+                          >
+                            {t("编辑", lang)}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(t0.id);
+                            }}
+                            style={{
+                              backgroundColor: "red",
+                              color: "white",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "4px",
+                              flex: 1
+                            }}
+                          >
+                            {t("删除", lang)}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             );
           })
@@ -465,33 +552,57 @@ export default function TransactionsPage() {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((t0) => {
-              const account = accounts.find((a) => a.id === t0.account_id);
+            {groupedTransactions.map((group) => {
+              const isMonthExpanded = expandedMonths[group.month] ?? false;
+
               return (
-                <tr key={t0.id}>
-                  <td style={cellStyle}>{t0.date}</td>
-                  <td style={cellStyle}>{t(t0.type, lang)}</td>
-                  <td style={cellStyle}>{t(t0.category || "", lang)}</td>
-                  <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
-                  <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
-                  <td style={cellStyle}>{account?.name || t0.account_id}</td>
-                  <td style={cellStyle}>{t0.currency}</td>
-                  <td style={cellStyle}>{t0.note}</td>
-                  <td style={cellStyle}>
-                    <button
-                      onClick={() => handleEdit(t0)}
-                      style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
+                <Fragment key={group.month}>
+                  <tr>
+                    <td
+                      colSpan={9}
+                      style={{
+                        ...cellStyle,
+                        backgroundColor: "#f0f0f0",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => toggleMonth(group.month)}
                     >
-                      {t("编辑", lang)}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(t0.id)}
-                      style={{ backgroundColor: "red", color: "white", border: "none", padding: "4px 8px" }}
-                    >
-                      {t("删除", lang)}
-                    </button>
-                  </td>
-                </tr>
+                      {isMonthExpanded ? "▼" : "▶"} {group.month}（
+                      {group.transactions.length}笔）
+                    </td>
+                  </tr>
+                  {isMonthExpanded &&
+                    group.transactions.map((t0) => {
+                      const account = accounts.find((a) => a.id === t0.account_id);
+                      return (
+                        <tr key={t0.id}>
+                          <td style={cellStyle}>{t0.date}</td>
+                          <td style={cellStyle}>{t(t0.type, lang)}</td>
+                          <td style={cellStyle}>{t(t0.category || "", lang)}</td>
+                          <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
+                          <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
+                          <td style={cellStyle}>{account?.name || t0.account_id}</td>
+                          <td style={cellStyle}>{t0.currency}</td>
+                          <td style={cellStyle}>{t0.note}</td>
+                          <td style={cellStyle}>
+                            <button
+                              onClick={() => handleEdit(t0)}
+                              style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
+                            >
+                              {t("编辑", lang)}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(t0.id)}
+                              style={{ backgroundColor: "red", color: "white", border: "none", padding: "4px 8px" }}
+                            >
+                              {t("删除", lang)}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </Fragment>
               );
             })}
             {transactions.length === 0 && (
