@@ -50,6 +50,7 @@ function Nav() {
     { icon: "📊", key: "收支汇总", href: "/summary" },
     { icon: "📈", key: "账户总揽", href: "/account-overview" },
     { icon: "🛠", key: "工程记录", href: "/worklog" },
+    { icon: "🌎", key: "旅行账本", href: "/travel" },
     { icon: "📊", key: "账户余额", href: "/balance" },
     { icon: "📚", key: "项目管理", href: "/projects" },
   ];

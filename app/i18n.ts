@@ -15,6 +15,7 @@ const base: Record<string, string> = {
    "已记录项目": "Recorded Work Items",
    "账户余额": "Balance",
    "账户余额快照": "Balance Snapshot",
+   "旅行账本": "Travel Ledger",
    "项目管理": "Projects",
    "欢迎使用家庭财务App": "Welcome to the Family Finance",
    "请通过上方导航栏访问各个功能模块：账户余额、收支记录、工程记录、收支汇总。":
