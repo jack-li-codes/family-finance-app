@@ -9,7 +9,8 @@ import { supabase } from "@/lib/supabase";
 
 const TRIP_KEY = "mexico-2026-summer";
 const TRIP_NAME = "2026 墨西哥暑假旅行";
-const BUDGET_CAD = 10000;
+const DEFAULT_BUDGET_CAD = 10000;
+const BUDGET_STORAGE_KEY = "travel_budget_mexico_2026_summer";
 
 const recordTypeOptions = ["旅行支出", "资金注入", "对账调整"];
 const statusOptions = ["估算中", "已入账", "现金已记录", "待复查", "已核算"];
@@ -165,6 +166,9 @@ export default function TravelPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isBudgetEditing, setIsBudgetEditing] = useState(false);
+  const [travelBudget, setTravelBudget] = useState(DEFAULT_BUDGET_CAD);
+  const [budgetInput, setBudgetInput] = useState(String(DEFAULT_BUDGET_CAD));
   const [loading, setLoading] = useState(true);
 
   const fetchTravelExpenses = async (uid: string) => {
@@ -187,6 +191,14 @@ export default function TravelPage() {
   };
 
   useEffect(() => {
+    const savedBudget = window.localStorage.getItem(BUDGET_STORAGE_KEY);
+    const parsedBudget = savedBudget == null ? NaN : Number(savedBudget);
+
+    if (Number.isFinite(parsedBudget) && parsedBudget >= 0) {
+      setTravelBudget(parsedBudget);
+      setBudgetInput(String(parsedBudget));
+    }
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user?.id) {
         setLoading(false);
@@ -220,9 +232,9 @@ export default function TravelPage() {
       expectedTotal,
       settledTotal,
       pendingTotal,
-      remainingBudget: BUDGET_CAD - expectedTotal,
+      remainingBudget: travelBudget - expectedTotal,
     };
-  }, [costExpenses]);
+  }, [costExpenses, travelBudget]);
 
   const categorySummary = useMemo(() => {
     const summary = new Map<string, SummaryRow>();
@@ -260,6 +272,19 @@ export default function TravelPage() {
   ) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleBudgetSave = () => {
+    const nextBudget = Number(budgetInput);
+
+    if (!Number.isFinite(nextBudget) || nextBudget < 0) {
+      alert("请输入有效的预算金额");
+      return;
+    }
+
+    setTravelBudget(nextBudget);
+    window.localStorage.setItem(BUDGET_STORAGE_KEY, String(nextBudget));
+    setIsBudgetEditing(false);
   };
 
   const resetForm = () => {
@@ -372,7 +397,7 @@ export default function TravelPage() {
     }));
 
     const budgetRows = [
-      { 项目: "总预算", 金额: BUDGET_CAD },
+      { 项目: "总预算", 金额: travelBudget },
       { 项目: "预计总花费", 金额: budgetSummary.expectedTotal },
       { 项目: "已核算金额", 金额: budgetSummary.settledTotal },
       { 项目: "待核算金额", 金额: budgetSummary.pendingTotal },
@@ -465,7 +490,41 @@ export default function TravelPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 18 }}>
           <div style={cardStyle}>
             <div style={{ color: "#666", fontSize: 13 }}>总预算</div>
-            <strong>CAD {money(BUDGET_CAD)}</strong>
+            {isBudgetEditing ? (
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={budgetInput}
+                  onChange={(event) => setBudgetInput(event.target.value)}
+                  style={{ width: 110, padding: "4px 6px" }}
+                />
+                <button onClick={handleBudgetSave} style={{ padding: "4px 8px" }} type="button">
+                  保存
+                </button>
+                <button
+                  onClick={() => {
+                    setBudgetInput(String(travelBudget));
+                    setIsBudgetEditing(false);
+                  }}
+                  style={{ padding: "4px 8px" }}
+                  type="button"
+                >
+                  取消
+                </button>
+              </div>
+            ) : (
+              <>
+                <strong>CAD {money(travelBudget)}</strong>
+                <button
+                  onClick={() => setIsBudgetEditing(true)}
+                  style={{ marginLeft: 8, padding: "3px 8px", fontSize: 12 }}
+                  type="button"
+                >
+                  修改预算
+                </button>
+              </>
+            )}
           </div>
           <div style={cardStyle}>
             <div style={{ color: "#666", fontSize: 13 }}>预计总花费</div>
@@ -480,9 +539,11 @@ export default function TravelPage() {
             <strong>CAD {money(budgetSummary.pendingTotal)}</strong>
           </div>
           <div style={cardStyle}>
-            <div style={{ color: "#666", fontSize: 13 }}>剩余预算</div>
+            <div style={{ color: "#666", fontSize: 13 }}>
+              {budgetSummary.remainingBudget >= 0 ? "剩余预算" : "已超预算"}
+            </div>
             <strong style={{ color: budgetSummary.remainingBudget >= 0 ? "green" : "red" }}>
-              CAD {money(budgetSummary.remainingBudget)}
+              CAD {money(Math.abs(budgetSummary.remainingBudget))}
             </strong>
           </div>
         </div>
