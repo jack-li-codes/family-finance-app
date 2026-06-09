@@ -547,6 +547,20 @@ export default function FixedExpensesPage() {
     fontSize: "13px",
   };
 
+  const compactCellStyle = {
+    ...tdStyle,
+    whiteSpace: "nowrap" as const,
+  };
+
+  const actionButtonStyle = {
+    padding: "4px 10px",
+    border: "none",
+    borderRadius: 3,
+    cursor: "pointer",
+    fontSize: "12px",
+    whiteSpace: "nowrap" as const,
+  };
+
   const inputStyle = {
     padding: "6px 10px",
     width: "100%",
@@ -785,109 +799,106 @@ export default function FixedExpensesPage() {
 
         {/* List */}
         <h3>{lang === "zh" ? "所有项目" : "All Items"}</h3>
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
-          <thead>
-            <tr>
-              <th style={thStyle}>{lang === "zh" ? "序号" : "No."}</th>
-              <th style={thStyle}>{lang === "zh" ? "图标" : "Icon"}</th>
-              <th style={thStyle}>{lang === "zh" ? "名称" : "Name"}</th>
-              <th style={thStyle}>{lang === "zh" ? "金额" : "Amount"}</th>
-              <th style={thStyle}>{lang === "zh" ? "币种" : "Currency"}</th>
-              <th style={thStyle}>{lang === "zh" ? "备注" : "Note"}</th>
-              <th style={thStyle}>{lang === "zh" ? "排序" : "Sort"}</th>
-              <th style={thStyle}>{lang === "zh" ? "状态" : "Status"}</th>
-              <th style={thStyle}>{t("操作", lang)}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.length === 0 && (
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table style={{ minWidth: 1080, width: "100%", borderCollapse: "collapse", border: "1px solid #ccc", tableLayout: "fixed" }}>
+            <thead>
               <tr>
-                <td colSpan={9} style={{ textAlign: "center", padding: 20 }}>
-                  {t("暂无数据。", lang)}
-                </td>
+                <th style={{ ...thStyle, width: 56 }}>{lang === "zh" ? "序号" : "No."}</th>
+                <th style={{ ...thStyle, width: 56 }}>{lang === "zh" ? "图标" : "Icon"}</th>
+                <th style={{ ...thStyle, width: 220 }}>{lang === "zh" ? "名称" : "Name"}</th>
+                <th style={{ ...thStyle, width: 90 }}>{lang === "zh" ? "金额" : "Amount"}</th>
+                <th style={{ ...thStyle, width: 70 }}>{lang === "zh" ? "币种" : "Currency"}</th>
+                <th style={{ ...thStyle, width: 300 }}>{lang === "zh" ? "备注" : "Note"}</th>
+                <th style={{ ...thStyle, width: 70 }}>{lang === "zh" ? "排序" : "Sort"}</th>
+                <th style={{ ...thStyle, width: 80 }}>{lang === "zh" ? "状态" : "Status"}</th>
+                <th style={{ ...thStyle, width: 180 }}>{t("操作", lang)}</th>
               </tr>
-            )}
-            {expenses.map((exp, index) => (
-              <tr key={exp.id} style={{ backgroundColor: exp.is_active ? "white" : "#f5f5f5" }}>
-                <td style={tdStyle}>{index + 1}</td>
-                <td style={{ ...tdStyle, textAlign: "center", fontSize: "18px" }}>{exp.icon}</td>
-                <td style={tdStyle}>{exp.name}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{Number(exp.amount).toFixed(2)}</td>
-                <td style={tdStyle}>{exp.currency}</td>
-                <td style={{ ...tdStyle, color: "#666" }}>{exp.note}</td>
-                <td style={{ ...tdStyle, textAlign: "center" }}>{exp.sort_order}</td>
-                <td style={tdStyle}>
-                  <span style={{ color: exp.is_active ? "green" : "red", fontWeight: 500 }}>
-                    {exp.is_active ? (lang === "zh" ? "启用" : "Active") : (lang === "zh" ? "禁用" : "Inactive")}
-                  </span>
-                </td>
-                <td style={tdStyle}>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <button
-                      onClick={() => handleEdit(exp)}
-                      style={{
-                        backgroundColor: "#ffc107",
-                        padding: "4px 10px",
-                        border: "none",
-                        borderRadius: 3,
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {t("编辑", lang)}
-                    </button>
-                    {exp.is_active ? (
+            </thead>
+            <tbody>
+              {expenses.length === 0 && (
+                <tr>
+                  <td colSpan={9} style={{ textAlign: "center", padding: 20 }}>
+                    {t("暂无数据。", lang)}
+                  </td>
+                </tr>
+              )}
+              {expenses.map((exp, index) => (
+                <tr key={exp.id} style={{ backgroundColor: exp.is_active ? "white" : "#f5f5f5" }}>
+                  <td style={compactCellStyle}>{index + 1}</td>
+                  <td style={{ ...compactCellStyle, textAlign: "center", fontSize: "18px" }}>{exp.icon}</td>
+                  <td style={{ ...compactCellStyle, overflow: "hidden", textOverflow: "ellipsis" }} title={exp.name}>{exp.name}</td>
+                  <td style={{ ...compactCellStyle, textAlign: "right" }}>{Number(exp.amount).toFixed(2)}</td>
+                  <td style={compactCellStyle}>{exp.currency}</td>
+                  <td
+                    style={{
+                      ...tdStyle,
+                      color: "#666",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={exp.note}
+                  >
+                    {exp.note}
+                  </td>
+                  <td style={{ ...compactCellStyle, textAlign: "center" }}>{exp.sort_order}</td>
+                  <td style={compactCellStyle}>
+                    <span style={{ color: exp.is_active ? "green" : "red", fontWeight: 500 }}>
+                      {exp.is_active ? (lang === "zh" ? "启用" : "Active") : (lang === "zh" ? "禁用" : "Inactive")}
+                    </span>
+                  </td>
+                  <td style={compactCellStyle}>
+                    <div style={{ display: "flex", flexDirection: "row", gap: 6, flexWrap: "nowrap", alignItems: "center" }}>
                       <button
-                        onClick={() => handleDelete(exp.id!)}
+                        onClick={() => handleEdit(exp)}
                         style={{
-                          backgroundColor: "#dc3545",
-                          color: "white",
-                          padding: "4px 10px",
-                          border: "none",
-                          borderRadius: 3,
-                          cursor: "pointer",
-                          fontSize: "12px",
+                          ...actionButtonStyle,
+                          backgroundColor: "#ffc107",
                         }}
                       >
-                        {t("删除", lang)}
+                        {t("编辑", lang)}
                       </button>
-                    ) : (
+                      {exp.is_active ? (
+                        <button
+                          onClick={() => handleDelete(exp.id!)}
+                          style={{
+                            ...actionButtonStyle,
+                            backgroundColor: "#dc3545",
+                            color: "white",
+                          }}
+                        >
+                          {t("删除", lang)}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleRestore(exp.id!)}
+                          style={{
+                            ...actionButtonStyle,
+                            backgroundColor: "#28a745",
+                            color: "white",
+                          }}
+                        >
+                          {lang === "zh" ? "恢复" : "Restore"}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleRestore(exp.id!)}
+                        onClick={() => handleHardDelete(exp.id!)}
                         style={{
-                          backgroundColor: "#28a745",
+                          ...actionButtonStyle,
+                          backgroundColor: "#6c757d",
                           color: "white",
-                          padding: "4px 10px",
-                          border: "none",
-                          borderRadius: 3,
-                          cursor: "pointer",
-                          fontSize: "12px",
                         }}
+                        title={lang === "zh" ? "永久删除" : "Permanently delete"}
                       >
-                        {lang === "zh" ? "恢复" : "Restore"}
+                        🗑️
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleHardDelete(exp.id!)}
-                      style={{
-                        backgroundColor: "#6c757d",
-                        color: "white",
-                        padding: "4px 10px",
-                        border: "none",
-                        borderRadius: 3,
-                        cursor: "pointer",
-                        fontSize: "12px",
-                      }}
-                      title={lang === "zh" ? "永久删除" : "Permanently delete"}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </AuthGuard>
   );
