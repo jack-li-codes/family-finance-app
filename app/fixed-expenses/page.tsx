@@ -788,7 +788,7 @@ export default function FixedExpensesPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
           <thead>
             <tr>
-              <th style={thStyle}>ID</th>
+              <th style={thStyle}>{lang === "zh" ? "序号" : "No."}</th>
               <th style={thStyle}>{lang === "zh" ? "图标" : "Icon"}</th>
               <th style={thStyle}>{lang === "zh" ? "名称" : "Name"}</th>
               <th style={thStyle}>{lang === "zh" ? "金额" : "Amount"}</th>
@@ -807,9 +807,9 @@ export default function FixedExpensesPage() {
                 </td>
               </tr>
             )}
-            {expenses.map((exp) => (
+            {expenses.map((exp, index) => (
               <tr key={exp.id} style={{ backgroundColor: exp.is_active ? "white" : "#f5f5f5" }}>
-                <td style={tdStyle}>{exp.id}</td>
+                <td style={tdStyle}>{index + 1}</td>
                 <td style={{ ...tdStyle, textAlign: "center", fontSize: "18px" }}>{exp.icon}</td>
                 <td style={tdStyle}>{exp.name}</td>
                 <td style={{ ...tdStyle, textAlign: "right" }}>{Number(exp.amount).toFixed(2)}</td>
