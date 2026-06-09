@@ -221,6 +221,20 @@ export default function AccountsPage() {
     verticalAlign: "middle",
     whiteSpace: "nowrap" as const,
   };
+
+  const ellipsisCellStyle = {
+    ...tdStyle,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
+
+  const actionButtonStyle = {
+    padding: "6px 10px",
+    borderRadius: 4,
+    border: "none",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+  };
   const sortedAccounts = sortAccountsByPreferredOrder(accounts);
 
   return (
@@ -321,51 +335,49 @@ export default function AccountsPage() {
           </table>
         )}
 
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
-          <thead>
-            <tr>
-              {[
-                "账户名称",
-                "分类",
-                "所有人",
-                "币种",
-                "卡号",
-                "备注",
-                "初始余额",
-                "当前余额",
-                "起始日期",
-                "操作"
-              ].map((h) => (
-                <th key={h} style={thStyle}>{t(h, lang)}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sortedAccounts.map((acc) => (
-              <tr key={acc.id}>
-                <td style={tdStyle}>{acc.name}</td>
-                <td style={tdStyle}>{t(acc.category, lang)}</td>
-                <td style={tdStyle}>{acc.owner}</td>
-                <td style={tdStyle}>{acc.currency}</td>
-                <td style={tdStyle}>{acc.card_number}</td>
-                <td style={tdStyle}>{acc.note}</td>
-                <td style={tdStyle}>{acc.initial_balance}</td>
-                <td style={tdStyle}><b>{getCurrentBalance(acc).toFixed(2)}</b></td>
-                <td style={tdStyle}>{acc.initial_date ?? ""}</td>
-                <td style={tdStyle}>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => handleEdit(acc)} style={{ backgroundColor: "#ffc107", padding: "6px 10px", borderRadius: 4 }}>
-                      {t("编辑", lang)}
-                    </button>
-                    <button onClick={() => handleDelete(acc.id)} style={{ backgroundColor: "red", color: "white", padding: "6px 10px", borderRadius: 4 }}>
-                      {t("删除", lang)}
-                    </button>
-                  </div>
-                </td>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table style={{ minWidth: 1180, width: "100%", borderCollapse: "collapse", border: "1px solid #ccc", tableLayout: "fixed" }}>
+            <thead>
+              <tr>
+                <th style={{ ...thStyle, width: 220 }}>{t("账户名称", lang)}</th>
+                <th style={{ ...thStyle, width: 100 }}>{t("分类", lang)}</th>
+                <th style={{ ...thStyle, width: 90 }}>{t("所有人", lang)}</th>
+                <th style={{ ...thStyle, width: 70 }}>{t("币种", lang)}</th>
+                <th style={{ ...thStyle, width: 130 }}>{t("卡号", lang)}</th>
+                <th style={{ ...thStyle, width: 520 }}>{t("备注", lang)}</th>
+                <th style={{ ...thStyle, width: 100 }}>{t("初始余额", lang)}</th>
+                <th style={{ ...thStyle, width: 110 }}>{t("当前余额", lang)}</th>
+                <th style={{ ...thStyle, width: 110 }}>{t("起始日期", lang)}</th>
+                <th style={{ ...thStyle, width: 130 }}>{t("操作", lang)}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortedAccounts.map((acc) => (
+                <tr key={acc.id}>
+                  <td style={ellipsisCellStyle} title={acc.name}>{acc.name}</td>
+                  <td style={tdStyle}>{t(acc.category, lang)}</td>
+                  <td style={tdStyle}>{acc.owner}</td>
+                  <td style={tdStyle}>{acc.currency}</td>
+                  <td style={ellipsisCellStyle} title={acc.card_number}>{acc.card_number}</td>
+                  <td style={{ ...ellipsisCellStyle, maxWidth: 520 }} title={acc.note}>{acc.note}</td>
+                  <td style={tdStyle}>{acc.initial_balance}</td>
+                  <td style={tdStyle}><b>{getCurrentBalance(acc).toFixed(2)}</b></td>
+                  <td style={tdStyle}>{acc.initial_date ?? ""}</td>
+                  <td style={tdStyle}>
+                    <div style={{ display: "flex", flexDirection: "row", gap: 8, flexWrap: "nowrap", alignItems: "center" }}>
+                      <button onClick={() => handleEdit(acc)} style={{ ...actionButtonStyle, backgroundColor: "#ffc107" }}>
+                        {t("编辑", lang)}
+                      </button>
+                      <button onClick={() => handleDelete(acc.id)} style={{ ...actionButtonStyle, backgroundColor: "red", color: "white" }}>
+                        {t("删除", lang)}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </AuthGuard>
   );
