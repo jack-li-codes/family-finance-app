@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { Fragment, useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 import AuthGuard from "@/components/AuthGuard";
@@ -65,6 +65,7 @@ export default function WorklogPage() {
   const { lang } = useLang();
   const [worklogs, setWorklogs] = useState<WorkLog[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState<WorkLog>({
     date: toLocalYMD(new Date()),
     start_time: "",
@@ -87,6 +88,66 @@ export default function WorklogPage() {
     const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
     const date = parseDateOnlyLocal(dateStr);
     return weekdays[date.getDay()];
+  };
+
+  const groupedWorklogs = useMemo(() => {
+    const monthMap = new Map<string, WorkLog[]>();
+
+    worklogs.forEach((log) => {
+      const month = log.date?.slice(0, 7) || "Unknown";
+      const monthLogs = monthMap.get(month) || [];
+
+      monthLogs.push(log);
+      monthMap.set(month, monthLogs);
+    });
+
+    return Array.from(monthMap, ([month, logs]) => {
+      const totalHours = logs.reduce((sum, log) => {
+        return sum + (Number(log.hours ?? 0) || 0);
+      }, 0);
+      const totalActualHours = logs.reduce((sum, log) => {
+        return sum + (Number(log.actual_hours ?? log.hours ?? 0) || 0);
+      }, 0);
+
+      return {
+        month,
+        logs,
+        totalHours: Math.round(totalHours * 100) / 100,
+        totalActualHours: Math.round(totalActualHours * 100) / 100,
+      };
+    });
+  }, [worklogs]);
+
+  useEffect(() => {
+    if (groupedWorklogs.length === 0) {
+      return;
+    }
+
+    const currentMonth = formatMonthKey(new Date());
+    const defaultOpenMonth = groupedWorklogs.some((group) => group.month === currentMonth)
+      ? currentMonth
+      : groupedWorklogs[0].month;
+
+    setExpandedMonths((currentExpandedMonths) => {
+      let changed = false;
+      const nextExpandedMonths = { ...currentExpandedMonths };
+
+      groupedWorklogs.forEach((group) => {
+        if (nextExpandedMonths[group.month] === undefined) {
+          nextExpandedMonths[group.month] = group.month === defaultOpenMonth;
+          changed = true;
+        }
+      });
+
+      return changed ? nextExpandedMonths : currentExpandedMonths;
+    });
+  }, [groupedWorklogs]);
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonths((currentExpandedMonths) => ({
+      ...currentExpandedMonths,
+      [month]: !currentExpandedMonths[month],
+    }));
   };
 
   useEffect(() => {
@@ -403,22 +464,54 @@ export default function WorklogPage() {
           width: 100%;
           border-collapse: collapse;
           border: 1px solid #ccc;
-          min-width: 800px;
+          min-width: 1240px;
+          table-layout: fixed;
         }
 
         .worklog-table th,
         .worklog-table td {
           border: 1px solid #ccc;
-          padding: 10px 16px;
+          padding: 8px 10px;
+          vertical-align: middle;
+          white-space: nowrap;
         }
 
         .action-buttons {
           display: flex;
+          flex-direction: row;
           gap: 8px;
+          flex-wrap: nowrap;
+          align-items: center;
+          white-space: nowrap;
         }
 
         .action-buttons button {
           padding: 4px 8px;
+          white-space: nowrap;
+        }
+
+        .cell-ellipsis {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .month-row {
+          background-color: #f0f0f0;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .month-row td {
+          font-weight: 700;
+          padding: 10px 12px;
+        }
+
+        .month-summary {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
         }
 
         @media (max-width: 640px) {
@@ -722,6 +815,19 @@ export default function WorklogPage() {
         <h4>📋 {t("已记录项目", lang)}</h4>
         <div className="table-container">
           <table className="worklog-table">
+            <colgroup>
+              <col style={{ width: 100 }} />
+              <col style={{ width: 60 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 80 }} />
+              <col style={{ width: 90 }} />
+              <col style={{ width: 190 }} />
+              <col style={{ width: 170 }} />
+              <col style={{ width: 320 }} />
+              <col style={{ width: 70 }} />
+              <col style={{ width: 150 }} />
+            </colgroup>
             <thead>
               <tr>
                 <th style={{ backgroundColor: "#f0f0f0", textAlign: "left" }}>{t("日期", lang)}</th>
@@ -745,36 +851,61 @@ export default function WorklogPage() {
                   </td>
                 </tr>
               )}
-              {worklogs.map((log) => (
-                <tr key={log.id} style={{ backgroundColor: log.is_holiday ? "#fff3cd" : "transparent" }}>
-                  <td>{log.date || t("无日期", lang)}</td>
-                  <td>{getWeekday(log.date)}</td>
-                  <td>{log.start_time || t("无时间", lang)}</td>
-                  <td>{log.end_time || t("无时间", lang)}</td>
-                  <td>{log.hours ?? 0}</td>
-                  <td>{log.actual_hours ?? log.hours ?? 0}</td>
-                  <td>{log.project_name || t("无项目", lang)}</td>
-                  <td className="col-location">{log.location || t("无地点", lang)}</td>
-                  <td className="col-note">{log.note || t("无备注", lang)}</td>
-                  <td>{log.is_holiday ? "✓" : ""}</td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        onClick={() => handleEdit(log)}
-                        style={{ backgroundColor: "#ffc107" }}
-                      >
-                        {t("编辑", lang)}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(log.id!)}
-                        style={{ backgroundColor: "red", color: "white" }}
-                      >
-                        {t("删除", lang)}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {groupedWorklogs.map((group) => {
+                const isExpanded = expandedMonths[group.month] ?? false;
+
+                return (
+                  <Fragment key={group.month}>
+                    <tr className="month-row" onClick={() => toggleMonth(group.month)}>
+                      <td colSpan={11}>
+                        <div className="month-summary">
+                          <span>{isExpanded ? "▼" : "▶"} {group.month}</span>
+                          <span>{group.logs.length} 条</span>
+                          <span>{t("总工时", lang)}: {group.totalHours}</span>
+                          <span>{t("实际工时", lang)}: {group.totalActualHours}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded &&
+                      group.logs.map((log) => (
+                        <tr key={log.id} style={{ backgroundColor: log.is_holiday ? "#fff3cd" : "transparent" }}>
+                          <td>{log.date || t("无日期", lang)}</td>
+                          <td>{getWeekday(log.date)}</td>
+                          <td>{log.start_time || t("无时间", lang)}</td>
+                          <td>{log.end_time || t("无时间", lang)}</td>
+                          <td>{log.hours ?? 0}</td>
+                          <td>{log.actual_hours ?? log.hours ?? 0}</td>
+                          <td className="cell-ellipsis" title={log.project_name || t("无项目", lang)}>
+                            {log.project_name || t("无项目", lang)}
+                          </td>
+                          <td className="col-location cell-ellipsis" title={log.location || t("无地点", lang)}>
+                            {log.location || t("无地点", lang)}
+                          </td>
+                          <td className="col-note cell-ellipsis" title={log.note || t("无备注", lang)}>
+                            {log.note || t("无备注", lang)}
+                          </td>
+                          <td style={{ textAlign: "center" }}>{log.is_holiday ? "✓" : ""}</td>
+                          <td>
+                            <div className="action-buttons">
+                              <button
+                                onClick={() => handleEdit(log)}
+                                style={{ backgroundColor: "#ffc107" }}
+                              >
+                                {t("编辑", lang)}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(log.id!)}
+                                style={{ backgroundColor: "red", color: "white" }}
+                              >
+                                {t("删除", lang)}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
