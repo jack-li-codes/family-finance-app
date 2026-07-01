@@ -67,6 +67,7 @@ export default function AccountsPage() {
   });
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -228,6 +229,30 @@ export default function AccountsPage() {
     textOverflow: "ellipsis",
   };
 
+  const noteCellStyle = {
+    ...tdStyle,
+    minWidth: 0,
+    whiteSpace: "normal" as const,
+    overflow: "hidden",
+    overflowWrap: "anywhere" as const,
+    wordBreak: "break-word" as const,
+    cursor: "pointer",
+  };
+
+  const noteContentStyle = {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical" as const,
+    WebkitLineClamp: 2,
+    overflow: "hidden",
+    lineHeight: 1.4,
+    maxHeight: "2.8em",
+  };
+
+  const expandedNoteContentStyle = {
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap" as const,
+  };
+
   const actionButtonStyle = {
     padding: "6px 10px",
     borderRadius: 4,
@@ -336,15 +361,15 @@ export default function AccountsPage() {
         )}
 
         <div style={{ overflowX: "auto", width: "100%" }}>
-          <table style={{ minWidth: 1180, width: "100%", borderCollapse: "collapse", border: "1px solid #ccc", tableLayout: "fixed" }}>
+          <table style={{ minWidth: 1040, width: "100%", borderCollapse: "collapse", border: "1px solid #ccc", tableLayout: "fixed" }}>
             <thead>
               <tr>
-                <th style={{ ...thStyle, width: 220 }}>{t("账户名称", lang)}</th>
+                <th style={{ ...thStyle, width: 180 }}>{t("账户名称", lang)}</th>
                 <th style={{ ...thStyle, width: 100 }}>{t("分类", lang)}</th>
                 <th style={{ ...thStyle, width: 90 }}>{t("所有人", lang)}</th>
                 <th style={{ ...thStyle, width: 70 }}>{t("币种", lang)}</th>
                 <th style={{ ...thStyle, width: 130 }}>{t("卡号", lang)}</th>
-                <th style={{ ...thStyle, width: 520 }}>{t("备注", lang)}</th>
+                <th style={thStyle}>{t("备注", lang)}</th>
                 <th style={{ ...thStyle, width: 100 }}>{t("初始余额", lang)}</th>
                 <th style={{ ...thStyle, width: 110 }}>{t("当前余额", lang)}</th>
                 <th style={{ ...thStyle, width: 110 }}>{t("起始日期", lang)}</th>
@@ -359,7 +384,15 @@ export default function AccountsPage() {
                   <td style={tdStyle}>{acc.owner}</td>
                   <td style={tdStyle}>{acc.currency}</td>
                   <td style={ellipsisCellStyle} title={acc.card_number}>{acc.card_number}</td>
-                  <td style={{ ...ellipsisCellStyle, maxWidth: 520 }} title={acc.note}>{acc.note}</td>
+                  <td
+                    onClick={() => setExpandedNoteId(expandedNoteId === acc.id ? null : acc.id)}
+                    style={noteCellStyle}
+                    title={acc.note || ""}
+                  >
+                    <div style={expandedNoteId === acc.id ? expandedNoteContentStyle : noteContentStyle}>
+                      {acc.note}
+                    </div>
+                  </td>
                   <td style={tdStyle}>{acc.initial_balance}</td>
                   <td style={tdStyle}><b>{getCurrentBalance(acc).toFixed(2)}</b></td>
                   <td style={tdStyle}>{acc.initial_date ?? ""}</td>

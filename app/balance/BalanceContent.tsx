@@ -28,6 +28,7 @@ export default function BalanceContent() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [checking, setChecking] = useState(true);
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,6 +95,32 @@ export default function BalanceContent() {
   if (checking) return null;
 
   const sortedAccounts = sortAccountsByPreferredOrder(accounts);
+  const balanceColumnWidths = [220, 80, 120, 120, undefined];
+  const balanceCellStyle = {
+    border: "1px solid #ccc",
+    padding: "8px",
+  };
+  const balanceNoteCellStyle = {
+    ...balanceCellStyle,
+    minWidth: 0,
+    overflow: "hidden",
+    overflowWrap: "anywhere" as const,
+    whiteSpace: "normal" as const,
+    wordBreak: "break-word" as const,
+    cursor: "pointer",
+  };
+  const balanceNoteContentStyle = {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical" as const,
+    WebkitLineClamp: 2,
+    lineHeight: 1.4,
+    maxHeight: "2.8em",
+    overflow: "hidden",
+  };
+  const expandedBalanceNoteContentStyle = {
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap" as const,
+  };
 
   return (
     <div style={{ padding: "20px", maxWidth: "1000px", marginLeft: 0, marginRight: "auto", fontFamily: "sans-serif" }}>
@@ -114,7 +141,13 @@ export default function BalanceContent() {
         📤 {t("导出为 Excel", lang)}
       </button>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+      <div style={{ width: "100%", overflowX: "auto" }}>
+      <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", fontSize: "14px", tableLayout: "fixed" }}>
+        <colgroup>
+          {balanceColumnWidths.map((width, index) => (
+            <col key={index} style={width ? { width } : undefined} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
             {[t("账户名称", lang), t("币种", lang), t("初始余额", lang), t("当前余额", lang), t("备注", lang)].map((header) => (
@@ -135,35 +168,35 @@ export default function BalanceContent() {
         <tbody>
           {sortedAccounts.map((acc) => (
             <tr key={acc.id}>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>{acc.name}</td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>{acc.currency}</td>
-              <td style={{ border: "1px solid #ccc", padding: "8px" }}>
+              <td style={balanceCellStyle}>{acc.name}</td>
+              <td style={balanceCellStyle}>{acc.currency}</td>
+              <td style={balanceCellStyle}>
                 {typeof acc.initial_balance === "number"
                   ? acc.initial_balance.toFixed(2)
                   : "—"}
               </td>
               <td
                 style={{
-                  border: "1px solid #ccc",
-                  padding: "8px",
+                  ...balanceCellStyle,
                   fontWeight: "bold",
                 }}
               >
                 {getCurrentBalance(acc).toFixed(2)}
               </td>
               <td
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "8px",
-                  whiteSpace: "pre-wrap",
-                }}
+                onClick={() => setExpandedNoteId(expandedNoteId === acc.id ? null : acc.id)}
+                style={balanceNoteCellStyle}
+                title={acc.note || ""}
               >
-                {acc.note}
+                <div style={expandedNoteId === acc.id ? expandedBalanceNoteContentStyle : balanceNoteContentStyle}>
+                  {acc.note}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

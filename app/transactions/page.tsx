@@ -33,6 +33,7 @@ export default function TransactionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
   const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
   const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
   const [formData, setFormData] = useState<Omit<Transaction, "id">>({
@@ -283,6 +284,18 @@ export default function TransactionsPage() {
     t("备注", lang),
     t("操作", lang),
   ];
+  const transactionColumnWidths = [
+    44,
+    120,
+    80,
+    130,
+    130,
+    110,
+    160,
+    80,
+    undefined,
+    130,
+  ];
   const sortedAccounts = sortAccountsByPreferredOrder(accounts);
 
   return (
@@ -363,6 +376,52 @@ export default function TransactionsPage() {
 
         .table-view {
           display: block;
+        }
+
+        .transactions-table-scroll {
+          width: 100%;
+          overflow-x: auto;
+        }
+
+        .transactions-table {
+          width: 100%;
+          min-width: 1300px;
+          table-layout: fixed;
+          border-collapse: collapse;
+          border: 1px solid #ccc;
+        }
+
+        .transactions-date-cell {
+          white-space: nowrap;
+        }
+
+        .transactions-note-cell {
+          min-width: 0;
+          white-space: normal;
+          overflow: hidden;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          cursor: pointer;
+        }
+
+        .transactions-note-content {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
+          line-height: 1.4;
+          max-height: 2.8em;
+        }
+
+        .transactions-note-content.expanded {
+          display: block;
+          -webkit-line-clamp: unset;
+          max-height: none;
+          white-space: pre-wrap;
+        }
+
+        .transactions-action-cell {
+          white-space: nowrap;
         }
 
         @media (max-width: 768px) {
@@ -651,7 +710,13 @@ export default function TransactionsPage() {
 
       {/* Table view for desktop (md以上) */}
       <div className="table-view">
-        <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ccc" }}>
+        <div className="transactions-table-scroll">
+        <table className="transactions-table">
+          <colgroup>
+            {transactionColumnWidths.map((width, index) => (
+              <col key={index} style={width ? { width } : undefined} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               <th style={thStyle}>
@@ -723,15 +788,24 @@ export default function TransactionsPage() {
                               type="checkbox"
                             />
                           </td>
-                          <td style={cellStyle}>{t0.date}</td>
+                          <td className="transactions-date-cell" style={cellStyle}>{t0.date}</td>
                           <td style={cellStyle}>{t(t0.type, lang)}</td>
                           <td style={cellStyle}>{t(t0.category || "", lang)}</td>
                           <td style={cellStyle}>{t(t0.subcategory || "", lang)}</td>
                           <td style={{ ...cellStyle, textAlign: "right" }}>{t0.amount}</td>
                           <td style={cellStyle}>{account?.name || t0.account_id}</td>
                           <td style={cellStyle}>{t0.currency}</td>
-                          <td style={cellStyle}>{t0.note}</td>
-                          <td style={cellStyle}>
+                          <td
+                            className="transactions-note-cell"
+                            onClick={() => setExpandedNoteId(expandedNoteId === t0.id ? null : t0.id)}
+                            style={cellStyle}
+                            title={t0.note || ""}
+                          >
+                            <div className={`transactions-note-content ${expandedNoteId === t0.id ? "expanded" : ""}`}>
+                              {t0.note}
+                            </div>
+                          </td>
+                          <td className="transactions-action-cell" style={cellStyle}>
                             <button
                               onClick={() => handleEdit(t0)}
                               style={{ backgroundColor: "#ffc107", border: "none", marginRight: 4, padding: "4px 8px" }}
@@ -760,6 +834,7 @@ export default function TransactionsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
     </>
